@@ -199,13 +199,11 @@ class AppNavigation {
   /// Go back
   static void goBack(BuildContext context) {
     final router = GoRouter.of(context);
-    final routeMatchList = router.routerDelegate.currentConfiguration;
-    
-    // Check if we have more than one route in the stack
-    if (routeMatchList.matches.length > 1) {
+    if (router.canPop()) {
       context.pop();
     } else {
-      // If we're at the root or only have one route, go to home
+      // If we can't pop, it means we are at the root of the navigation stack.
+      // In this case, navigate to the home screen to prevent popping the last page.
       context.go(AppRoutes.home);
     }
   }

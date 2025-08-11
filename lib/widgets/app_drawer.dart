@@ -56,7 +56,7 @@ class AppDrawer extends StatelessWidget {
       height: AppConstants.drawerHeaderHeight,
       padding: const EdgeInsets.fromLTRB(
         AppConstants.paddingLarge,
-        40,
+        AppConstants.paddingMedium,
         AppConstants.paddingLarge,
         AppConstants.paddingLarge,
       ),

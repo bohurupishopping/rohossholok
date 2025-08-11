@@ -55,12 +55,14 @@ class AppConstants {
   // Drawer Configuration
   static const double drawerWidth = 280.0;
   static const double miniDrawerWidth = 72.0;
-  static const double drawerHeaderHeight = 180.0;
+  static const double drawerHeaderHeight = 120.0;
   static const double miniDrawerHeaderHeight = 120.0;
   static const double drawerItemHeight = 56.0;
   static const double drawerIconSize = 20.0;
   static const double drawerIconContainerSize = 40.0;
 }
+
+
 
 /// Modern theme color constants with professional color scheme
 class AppColors {

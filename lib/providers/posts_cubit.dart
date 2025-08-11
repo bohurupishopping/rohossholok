@@ -138,19 +138,20 @@ class PostsCubit extends Cubit<PostsState> {
   }
   
   /// Search posts with debouncing
-  Future<void> searchPosts(String query) async {
+  Future<void> searchPosts(String query, {int? categoryId}) async {
     // Cancel previous search timer
     _searchDebounceTimer?.cancel();
     
     // Debounce search requests
     _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () async {
       if (query.trim().isEmpty) {
-        await loadPosts(refresh: true);
+        await loadPosts(refresh: true, categoryId: categoryId);
         return;
       }
       
       await loadPosts(
         search: query.trim(),
+        categoryId: categoryId,
         refresh: true,
       );
     });
@@ -183,6 +184,12 @@ class PostsCubit extends Cubit<PostsState> {
   Future<void> clearFilters() async {
     _searchDebounceTimer?.cancel();
     await loadPosts(refresh: true);
+  }
+
+  /// Clear search query and reset to initial state
+  Future<void> clearSearch() async {
+    _searchDebounceTimer?.cancel();
+    emit(const PostsState.initial());
   }
   
   /// Lazy load posts only when needed

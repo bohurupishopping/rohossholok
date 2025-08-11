@@ -404,7 +404,8 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
   Widget _buildCategoriesGrid(List<CategoryModel> categories) {
     return GridView.builder(
       padding: const EdgeInsets.all(_UI.paddingM),
-      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      physics: const NeverScrollableScrollPhysics(), // Changed to NeverScrollableScrollPhysics
+      shrinkWrap: true, // Added shrinkWrap to constrain height
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
         crossAxisSpacing: _UI.paddingM,

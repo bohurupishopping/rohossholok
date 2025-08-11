@@ -231,7 +231,7 @@ class _HottestNewsSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _SectionHeader(title: 'Hottest News', onSeeMore: () {}),
+                  _SectionHeader(title: 'Hottest Stories', onSeeMore: () {}),
                   SizedBox(
                     height: 280,
                     child: ListView.builder(

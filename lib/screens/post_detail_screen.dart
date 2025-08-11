@@ -136,8 +136,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Widget _buildContentSheet({required PostModel post}) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.65, // Start lower to show the image
-      minChildSize: 0.65,
+      initialChildSize: 0.75, // Start lower to show the image
+      minChildSize: 0.75,
       maxChildSize: 0.95,
       builder: (context, scrollController) {
         return Container(
