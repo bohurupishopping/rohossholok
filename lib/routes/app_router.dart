@@ -16,7 +16,7 @@ class AppRouter {
   /// Router configuration
   static final GoRouter _router = GoRouter(
     initialLocation: AppRoutes.home,
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: false, // Disabled for production
     routes: [
       // Home route
       GoRoute(
@@ -301,24 +301,24 @@ class AppNavigationObserver extends NavigatorObserver {
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
-    debugPrint('Navigation: Pushed ${route.settings.name}');
+    // debugPrint('Navigation: Pushed ${route.settings.name}');
   }
   
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPop(route, previousRoute);
-    debugPrint('Navigation: Popped ${route.settings.name}');
+    // debugPrint('Navigation: Popped ${route.settings.name}');
   }
   
   @override
   void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
     super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
-    debugPrint('Navigation: Replaced ${oldRoute?.settings.name} with ${newRoute?.settings.name}');
+    // debugPrint('Navigation: Replaced ${oldRoute?.settings.name} with ${newRoute?.settings.name}');
   }
   
   @override
   void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didRemove(route, previousRoute);
-    debugPrint('Navigation: Removed ${route.settings.name}');
+    // debugPrint('Navigation: Removed ${route.settings.name}');
   }
 }

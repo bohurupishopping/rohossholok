@@ -54,7 +54,7 @@ class RohossholokApp extends StatelessWidget {
             LogInterceptor(
               requestBody: true,
               responseBody: true,
-              logPrint: (object) => debugPrint(object.toString()),
+              logPrint: (object) => {}, // Removed for production
             ),
           ]),
         ),
@@ -106,8 +106,8 @@ class RohossholokApp extends StatelessWidget {
           
           // Theme configuration
           theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.system,
+          // Removed darkTheme support
+          themeMode: ThemeMode.light, // Force light mode
           
           // Router configuration
           routerConfig: AppRouter.router,
@@ -163,19 +163,19 @@ class AppLifecycleObserver extends WidgetsBindingObserver {
     
     switch (state) {
       case AppLifecycleState.resumed:
-        debugPrint('App resumed');
+        // debugPrint('App resumed');
         break;
       case AppLifecycleState.inactive:
-        debugPrint('App inactive');
+        // debugPrint('App inactive');
         break;
       case AppLifecycleState.paused:
-        debugPrint('App paused');
+        // debugPrint('App paused');
         break;
       case AppLifecycleState.detached:
-        debugPrint('App detached');
+        // debugPrint('App detached');
         break;
       case AppLifecycleState.hidden:
-        debugPrint('App hidden');
+        // debugPrint('App hidden');
         break;
     }
   }

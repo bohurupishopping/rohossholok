@@ -126,7 +126,7 @@ class AppUtils {
   static Future<void> launchURL(String url) async {
     // TODO: Implement URL launcher with url_launcher package
     // For now, just a placeholder
-    debugPrint('Opening URL: $url');
+    // debugPrint('Opening URL: $url');
   }
 
   /// Validates if the given string is a valid email address
