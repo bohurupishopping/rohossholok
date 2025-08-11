@@ -41,42 +41,90 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AppBar(
-      title: Text(
-        title,
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: foregroundColor ?? theme.colorScheme.onPrimary,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.secondary,
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: AppBar(
+        title: Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            letterSpacing: 0.5,
+          ),
+        ),
+        leading: leading ?? (showMenu ? _buildModernMenuButton(context) : null),
+        automaticallyImplyLeading: automaticallyImplyLeading,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: centerTitle,
+        bottom: bottom,
+        actions: _buildModernActions(context),
+      ),
+    );
+  }
+
+  Widget? _buildModernMenuButton(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(AppConstants.paddingSmall),
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        child: InkWell(
+          onTap: onMenuPressed ?? () => Scaffold.of(context).openDrawer(),
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+          child: Container(
+            padding: const EdgeInsets.all(AppConstants.paddingSmall),
+            child: Icon(
+              Icons.menu_rounded,
+              color: Colors.white,
+              size: AppConstants.iconSizeSmall + 4,
+            ),
+          ),
         ),
       ),
-      leading: leading ?? (showMenu ? _buildMenuButton(context) : null),
-      automaticallyImplyLeading: automaticallyImplyLeading,
-      backgroundColor: backgroundColor ?? theme.colorScheme.primary,
-      foregroundColor: foregroundColor ?? theme.colorScheme.onPrimary,
-      elevation: elevation,
-      centerTitle: centerTitle,
-      bottom: bottom,
-      actions: _buildActions(context),
     );
   }
 
-  Widget? _buildMenuButton(BuildContext context) {
-    return IconButton(
-      onPressed: onMenuPressed ?? () => Scaffold.of(context).openDrawer(),
-      icon: const Icon(Icons.menu),
-      tooltip: 'মেনু',
-    );
-  }
-
-  List<Widget>? _buildActions(BuildContext context) {
+  List<Widget>? _buildModernActions(BuildContext context) {
     final defaultActions = <Widget>[];
 
     if (showSearch && onSearchPressed != null) {
       defaultActions.add(
-        IconButton(
-          onPressed: onSearchPressed,
-          icon: const Icon(Icons.search),
-          tooltip: 'অনুসন্ধান',
+        Container(
+          margin: const EdgeInsets.all(AppConstants.paddingSmall),
+          child: Material(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+            child: InkWell(
+              onTap: onSearchPressed,
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+              child: Container(
+                padding: const EdgeInsets.all(AppConstants.paddingSmall),
+                child: Icon(
+                  Icons.search_rounded,
+                  color: Colors.white,
+                  size: AppConstants.iconSizeSmall + 4,
+                ),
+              ),
+            ),
+          ),
         ),
       );
     }
@@ -180,52 +228,81 @@ class _SearchAppBarState extends State<SearchAppBar>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AppBar(
-      backgroundColor: theme.colorScheme.surface,
-      foregroundColor: theme.colorScheme.onSurface,
-      elevation: 0,
-      leading: IconButton(
-        onPressed: widget.onBack ?? () => AppNavigation.goBack(context),
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.arrow_back_rounded,
-            color: theme.colorScheme.onSurface,
-            size: 20,
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.secondary,
+          ],
         ),
-        tooltip: 'ফিরে যান',
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      title: Container(
-        height: 44,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: theme.colorScheme.outline.withOpacity(0.1),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            // Search icon
-            Container(
-              margin: const EdgeInsets.all(8),
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.search_rounded,
-                color: theme.colorScheme.primary,
-                size: 18,
+      child: AppBar(
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: Container(
+          margin: const EdgeInsets.all(AppConstants.paddingSmall),
+          child: Material(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+            child: InkWell(
+              onTap: widget.onBack ?? () => AppNavigation.goBack(context),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+              child: Container(
+                padding: const EdgeInsets.all(AppConstants.paddingSmall),
+                child: Icon(
+                  Icons.arrow_back_rounded,
+                  color: Colors.white,
+                  size: AppConstants.iconSizeSmall + 4,
+                ),
               ),
             ),
+          ),
+        ),
+        title: Container(
+          height: 44,
+          margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+        child: Row(
+          children: [
+              // Search icon
+              Container(
+                margin: const EdgeInsets.all(AppConstants.paddingSmall),
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+                ),
+                child: Icon(
+                  Icons.search_rounded,
+                  color: Colors.white,
+                  size: AppConstants.iconSizeSmall + 2,
+                ),
+              ),
 
             // Text field
             Expanded(
@@ -237,7 +314,7 @@ class _SearchAppBarState extends State<SearchAppBar>
                 decoration: InputDecoration(
                   hintText: widget.hintText,
                   hintStyle: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 16,
                   ),
                   border: InputBorder.none,
@@ -246,8 +323,8 @@ class _SearchAppBarState extends State<SearchAppBar>
                     vertical: 12,
                   ),
                 ),
-                style: TextStyle(
-                  color: theme.colorScheme.onSurface,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -264,21 +341,21 @@ class _SearchAppBarState extends State<SearchAppBar>
                     opacity: _fadeAnimation.value,
                     child: _hasText
                         ? Container(
-                            margin: const EdgeInsets.only(right: 8),
+                            margin: const EdgeInsets.only(right: AppConstants.paddingSmall),
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(
                                 onTap: _onClear,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: theme.colorScheme.errorContainer,
-                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
                                   ),
-                                  child: Icon(
+                                  child: const Icon(
                                     Icons.close_rounded,
-                                    color: theme.colorScheme.onErrorContainer,
+                                    color: Colors.white,
                                     size: 16,
                                   ),
                                 ),
@@ -289,8 +366,9 @@ class _SearchAppBarState extends State<SearchAppBar>
                   ),
                 );
               },
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -320,64 +398,143 @@ class CategoryAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AppBar(
-      title: Text(
-        title,
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w600,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.secondary,
+          ],
         ),
-      ),
-      leading: IconButton(
-        onPressed: onMenuPressed ?? () => Scaffold.of(context).openDrawer(),
-        icon: const Icon(Icons.menu),
-        tooltip: 'মেনু',
-      ),
-      actions: [
-        if (onSearchPressed != null)
-          IconButton(
-            onPressed: onSearchPressed,
-            icon: const Icon(Icons.search),
-            tooltip: 'অনুসন্ধান',
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-      ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(56),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.paddingMedium,
-            vertical: AppConstants.paddingSmall,
+        ],
+      ),
+      child: AppBar(
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            letterSpacing: 0.5,
           ),
-          child: DropdownButtonFormField<String>(
-            value: selectedCategory,
-            decoration: InputDecoration(
-              hintText: 'বিভাগ নির্বাচন করুন',
-              filled: true,
-              fillColor: theme.colorScheme.surface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  AppConstants.borderRadiusMedium,
+        ),
+        leading: Container(
+          margin: const EdgeInsets.all(AppConstants.paddingSmall),
+          child: Material(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+            child: InkWell(
+              onTap: onMenuPressed ?? () => Scaffold.of(context).openDrawer(),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+              child: Container(
+                padding: const EdgeInsets.all(AppConstants.paddingSmall),
+                child: Icon(
+                  Icons.menu_rounded,
+                  color: Colors.white,
+                  size: AppConstants.iconSizeSmall + 4,
                 ),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppConstants.paddingMedium,
-                vertical: AppConstants.paddingSmall,
               ),
             ),
-            items: [
-              const DropdownMenuItem<String>(
-                value: null,
-                child: Text('সব বিভাগ'),
-              ),
-              ...categories.map(
-                (category) => DropdownMenuItem<String>(
-                  value: category,
-                  child: Text(category),
+          ),
+        ),
+        actions: [
+          if (onSearchPressed != null)
+            Container(
+              margin: const EdgeInsets.all(AppConstants.paddingSmall),
+              child: Material(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                child: InkWell(
+                  onTap: onSearchPressed,
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppConstants.paddingSmall),
+                    child: Icon(
+                      Icons.search_rounded,
+                      color: Colors.white,
+                      size: AppConstants.iconSizeSmall + 4,
+                    ),
+                  ),
                 ),
               ),
-            ],
-            onChanged: onCategoryChanged,
-            dropdownColor: theme.colorScheme.surface,
+            ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.paddingMedium,
+              vertical: AppConstants.paddingSmall,
+            ),
+            child: DropdownButtonFormField<String>(
+              value: selectedCategory,
+              decoration: InputDecoration(
+                hintText: 'বিভাগ নির্বাচন করুন',
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                ),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.15),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.borderRadiusMedium,
+                  ),
+                  borderSide: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.borderRadiusMedium,
+                  ),
+                  borderSide: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.borderRadiusMedium,
+                  ),
+                  borderSide: const BorderSide(
+                    color: Colors.white,
+                    width: 2,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppConstants.paddingMedium,
+                  vertical: AppConstants.paddingSmall,
+                ),
+              ),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+              dropdownColor: theme.colorScheme.surface,
+              iconEnabledColor: Colors.white,
+              items: [
+                const DropdownMenuItem<String>(
+                  value: null,
+                  child: Text('সব বিভাগ'),
+                ),
+                ...categories.map(
+                  (category) => DropdownMenuItem<String>(
+                    value: category,
+                    child: Text(category),
+                  ),
+                ),
+              ],
+              onChanged: onCategoryChanged,
+            ),
           ),
         ),
       ),
@@ -409,34 +566,100 @@ class PostDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return AppBar(
-      title: Text(
-        title,
-        style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w600,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.secondary,
+          ],
         ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      leading: IconButton(
-        onPressed: onBack ?? () => AppNavigation.goBack(context),
-        icon: const Icon(Icons.arrow_back),
-        tooltip: 'ফিরে যান',
-      ),
-      actions: [
-        if (onBookmark != null)
-          IconButton(
-            onPressed: onBookmark,
-            icon: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_border),
-            tooltip: isBookmarked ? 'বুকমার্ক সরান' : 'বুকমার্ক করুন',
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        if (onShare != null)
-          IconButton(
-            onPressed: onShare,
-            icon: const Icon(Icons.share),
-            tooltip: 'শেয়ার করুন',
+        ],
+      ),
+      child: AppBar(
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            letterSpacing: 0.5,
           ),
-      ],
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        leading: Container(
+          margin: const EdgeInsets.all(AppConstants.paddingSmall),
+          child: Material(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+            child: InkWell(
+              onTap: onBack ?? () => AppNavigation.goBack(context),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+              child: Container(
+                padding: const EdgeInsets.all(AppConstants.paddingSmall),
+                child: Icon(
+                  Icons.arrow_back_rounded,
+                  color: Colors.white,
+                  size: AppConstants.iconSizeSmall + 4,
+                ),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          if (onBookmark != null)
+            Container(
+              margin: const EdgeInsets.all(AppConstants.paddingSmall),
+              child: Material(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                child: InkWell(
+                  onTap: onBookmark,
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppConstants.paddingSmall),
+                    child: Icon(
+                      isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                      color: Colors.white,
+                      size: AppConstants.iconSizeSmall + 4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (onShare != null)
+            Container(
+              margin: const EdgeInsets.all(AppConstants.paddingSmall),
+              child: Material(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                child: InkWell(
+                  onTap: onShare,
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppConstants.paddingSmall),
+                    child: Icon(
+                      Icons.share_rounded,
+                      color: Colors.white,
+                      size: AppConstants.iconSizeSmall + 4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 

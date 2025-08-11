@@ -1,7 +1,9 @@
 # TODO:
 
-- [x] 1: Modernize search_widget.dart - remove SearchSuggestions and SearchFilters, simplify UI (priority: High)
-- [x] 2: Update search_screen.dart - remove suggestions, simplify interface, change Bengali to English (priority: High)
-- [ ] 3: Revamp app_drawer.dart - modernize UI, use logo.png, change Bengali to English, improve colors (**IN PROGRESS**) (priority: High)
-- [ ] 4: Apply performance optimizations across all components (priority: Medium)
-- [ ] 5: Test all components for functionality and responsiveness (priority: Medium)
+- [x] analyze_drawer: Analyze app_drawer.dart UI design and color scheme (priority: High)
+- [x] update_theme: Update theme.dart to match modern colors from app_drawer.dart (priority: High)
+- [x] update_constants: Update constants.dart with drawer-specific constants and modern colors (priority: High)
+- [x] update_appbar: Update custom_app_bar.dart to use theme colors and remove hardcoded values (priority: High)
+- [x] update_drawer: Update app_drawer.dart to use theme colors and constants instead of hardcoded values (priority: High)
+- [ ] material3_consistency: Ensure Material 3 design consistency across all components (**IN PROGRESS**) (priority: Medium)
+- [ ] test_ui: Test the updated UI components for visual consistency (priority: Medium)

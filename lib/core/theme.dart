@@ -12,24 +12,24 @@ class AppTheme {
   /// Light theme configuration
   static ThemeData get lightTheme {
     const ColorScheme colorScheme = ColorScheme.light(
-      // Primary colors - Deep blue for mystery theme
-      primary: Color(AppColors.primaryBlue),
+      // Primary colors - Modern blue theme matching drawer
+      primary: Color(AppColors.drawerPrimary), // 0xFF1565C0
       onPrimary: Colors.white,
       primaryContainer: Color(0xFFBBDEFB), // Light blue
       onPrimaryContainer: Color(0xFF0D47A1), // Dark blue
-      // Secondary colors - Warm orange for accent
-      secondary: Color(AppColors.accentOrange),
+      // Secondary colors - Modern accent blue
+      secondary: Color(AppColors.drawerAccent), // 0xFF0EA5E9
       onSecondary: Colors.white,
-      secondaryContainer: Color(0xFFFFE0B2), // Light orange
-      onSecondaryContainer: Color(0xFFE65100), // Dark orange
-      // Surface colors
-      surface: Colors.white,
-      onSurface: Color(AppColors.neutral800),
+      secondaryContainer: Color(0xFFE0F7FA), // Light cyan
+      onSecondaryContainer: Color(0xFF006064), // Dark cyan
+      // Surface colors - Modern light surface
+      surface: Color(AppColors.drawerSurface), // 0xFFF8FAFC
+      onSurface: Color(AppColors.drawerOnSurface), // 0xFF334155
       surfaceContainerHighest: Color(AppColors.neutral200),
-      onSurfaceVariant: Color(0xFF757575), // Medium grey
+      onSurfaceVariant: Color(AppColors.drawerSecondary), // 0xFF64748B
       // Background colors
-      background: Color(0xFFFAFAFA), // Very light grey
-      onBackground: Color(AppColors.neutral800),
+      background: Color(AppColors.drawerSurface), // 0xFFF8FAFC
+      onBackground: Color(AppColors.drawerOnSurface), // 0xFF334155
 
       // Error colors
       error: Color(AppColors.error),

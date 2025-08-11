@@ -51,6 +51,15 @@ class AppConstants {
   static const double postImageAspectRatio = 16 / 9;
   static const String placeholderImageUrl =
       '$baseUrl/wp-content/themes/default/images/placeholder.jpg';
+
+  // Drawer Configuration
+  static const double drawerWidth = 280.0;
+  static const double miniDrawerWidth = 72.0;
+  static const double drawerHeaderHeight = 180.0;
+  static const double miniDrawerHeaderHeight = 120.0;
+  static const double drawerItemHeight = 56.0;
+  static const double drawerIconSize = 20.0;
+  static const double drawerIconContainerSize = 40.0;
 }
 
 /// Modern theme color constants with professional color scheme
@@ -59,6 +68,14 @@ class AppColors {
   static const int primaryBlue = 0xFF1976D2; // Material Blue
   static const int primaryTeal = 0xFF00796B; // Teal accent
   static const int primaryIndigo = 0xFF3F51B5; // Indigo
+
+  // Modern Drawer Colors - Matching app_drawer.dart design
+  static const int drawerPrimary = 0xFF1565C0; // Primary blue from drawer
+  static const int drawerAccent = 0xFF0EA5E9; // Accent blue from drawer
+  static const int drawerSurface = 0xFFF8FAFC; // Surface color from drawer
+  static const int drawerOnSurface = 0xFF334155; // On surface text color
+  static const int drawerSecondary = 0xFF64748B; // Secondary text color
+  static const int drawerText = 0xFF334155; // Main text color
 
   // Surface Colors
   static const int surfaceLight = 0xFFFAFAFA; // Light surface

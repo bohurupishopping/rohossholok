@@ -7,13 +7,8 @@ import '../routes/app_router.dart';
 import '../providers/categories_cubit.dart';
 import '../models/category_model.dart';
 
-// Modern color scheme constants for drawer components
-const _primaryColor = Color(0xFF1565C0);
-const _surfaceColor = Color(0xFFF8FAFC);
-const _onSurfaceColor = Color(0xFF334155);
-const _secondaryColor = Color(0xFF64748B);
-const _accentColor = Color(0xFF0EA5E9);
-const _textColor = Color(0xFF334155);
+// Import theme colors - these will be replaced with theme.colorScheme usage
+// Keeping constants for backward compatibility during transition
 
 /// Modern navigation drawer with optimized performance and clean UI
 class AppDrawer extends StatelessWidget {
@@ -21,8 +16,10 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Drawer(
-      backgroundColor: _surfaceColor,
+      backgroundColor: theme.colorScheme.surface,
       child: Column(
         children: [
           _buildModernHeader(context),
@@ -31,13 +28,13 @@ class AppDrawer extends StatelessWidget {
               padding: EdgeInsets.zero,
               physics: const BouncingScrollPhysics(),
               children: [
-                const SizedBox(height: 8),
+                const SizedBox(height: AppConstants.paddingSmall),
                 _buildMainMenuItems(context),
-                _buildDivider(),
+                _buildDivider(context),
                 _buildCategoriesSection(context),
-                _buildDivider(),
+                _buildDivider(context),
                 _buildFooterItems(context),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppConstants.paddingMedium),
               ],
             ),
           ),
@@ -48,18 +45,25 @@ class AppDrawer extends StatelessWidget {
 
   /// Modern header with logo and clean design
   Widget _buildModernHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Container(
-      height: 180,
-      padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-      decoration: const BoxDecoration(
+      height: AppConstants.drawerHeaderHeight,
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.paddingLarge,
+        40,
+        AppConstants.paddingLarge,
+        AppConstants.paddingLarge,
+      ),
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [_primaryColor, _accentColor],
+          colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
         ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(AppConstants.borderRadiusExtraLarge),
+          bottomRight: Radius.circular(AppConstants.borderRadiusExtraLarge),
         ),
       ),
       child: Column(
@@ -79,7 +83,7 @@ class AppDrawer extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.asset(
-                    'assets/logo.png',
+                    '/logo.png',
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) => const Icon(
                       Icons.article_rounded,
@@ -123,12 +127,17 @@ class AppDrawer extends StatelessWidget {
   }
 
   /// Custom divider with modern styling
-  Widget _buildDivider() {
+  Widget _buildDivider(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppConstants.paddingMedium,
+        vertical: AppConstants.paddingSmall,
+      ),
       height: 1,
       decoration: BoxDecoration(
-        color: _secondaryColor.withValues(alpha: 0.2),
+        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(1),
       ),
     );
@@ -137,7 +146,7 @@ class AppDrawer extends StatelessWidget {
   /// Main menu items with optimized performance
   Widget _buildMainMenuItems(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
       child: Column(
         children: [
           _buildModernDrawerItem(
@@ -170,37 +179,39 @@ class AppDrawer extends StatelessWidget {
   Widget _buildCategoriesSection(BuildContext context) {
     return BlocBuilder<CategoriesCubit, CategoriesState>(
       builder: (context, state) {
+        final theme = Theme.of(context);
+        
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                  horizontal: AppConstants.paddingMedium,
+                  vertical: AppConstants.paddingSmall + 4,
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: _accentColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.category_rounded,
-                        size: 16,
-                        color: _accentColor,
+                        size: AppConstants.iconSizeSmall,
+                        color: theme.colorScheme.secondary,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Text(
+                    const SizedBox(width: AppConstants.paddingSmall + 4),
+                    Text(
                       'Categories',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: AppConstants.iconSizeSmall,
                         fontWeight: FontWeight.w600,
-                        color: _onSurfaceColor,
+                        color: theme.colorScheme.onSurface,
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -236,7 +247,7 @@ class AppDrawer extends StatelessWidget {
   /// Footer items with modern design
   Widget _buildFooterItems(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
       child: Column(
         children: [
           _buildModernDrawerItem(
@@ -284,34 +295,42 @@ class AppDrawer extends StatelessWidget {
     String? subtitle,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppConstants.paddingSmall,
+        vertical: 2,
+      ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          splashColor: _accentColor.withValues(alpha: 0.1),
-          highlightColor: _accentColor.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+          splashColor: theme.colorScheme.secondary.withValues(alpha: 0.1),
+          highlightColor: theme.colorScheme.secondary.withValues(alpha: 0.05),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppConstants.paddingMedium,
+              vertical: 14,
+            ),
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: AppConstants.drawerIconContainerSize,
+                  height: AppConstants.drawerIconContainerSize,
                   decoration: BoxDecoration(
-                    color: _accentColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                   ),
                   child: Icon(
                     icon,
-                    color: _accentColor,
-                    size: 20,
+                    color: theme.colorScheme.secondary,
+                    size: AppConstants.drawerIconSize,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppConstants.paddingMedium),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,10 +338,10 @@ class AppDrawer extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: _onSurfaceColor,
+                          color: theme.colorScheme.onSurface,
                           letterSpacing: 0.2,
                         ),
                       ),
@@ -333,7 +352,7 @@ class AppDrawer extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
-                            color: _secondaryColor,
+                            color: theme.colorScheme.onSurfaceVariant,
                             letterSpacing: 0.1,
                           ),
                         ),
@@ -343,8 +362,8 @@ class AppDrawer extends StatelessWidget {
                 ),
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: _secondaryColor,
-                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  size: AppConstants.iconSizeSmall + 2,
                 ),
               ],
             ),
@@ -361,8 +380,10 @@ class _ModernLoadingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
       child: Column(
         children: List.generate(
           3,
@@ -370,21 +391,21 @@ class _ModernLoadingWidget extends StatelessWidget {
             height: 48,
             margin: const EdgeInsets.symmetric(vertical: 4),
             decoration: BoxDecoration(
-              color: _secondaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             ),
             child: Row(
               children: [
-                const SizedBox(width: 16),
+                const SizedBox(width: AppConstants.paddingMedium),
                 Container(
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: _secondaryColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppConstants.paddingMedium),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -394,7 +415,7 @@ class _ModernLoadingWidget extends StatelessWidget {
                         height: 12,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: _secondaryColor.withValues(alpha: 0.2),
+                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
@@ -403,14 +424,14 @@ class _ModernLoadingWidget extends StatelessWidget {
                         height: 8,
                         width: 80,
                         decoration: BoxDecoration(
-                          color: _secondaryColor.withValues(alpha: 0.15),
+                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppConstants.paddingMedium),
               ],
             ),
           ),
@@ -432,8 +453,10 @@ class _ModernCategoriesListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
       child: Column(
         children: categories
             .take(5)
@@ -442,15 +465,15 @@ class _ModernCategoriesListWidget extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(vertical: 2),
                 child: Material(
                   color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                   child: InkWell(
                     onTap: () => onCategoryTap(category),
-                    borderRadius: BorderRadius.circular(12),
-                    splashColor: _accentColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                    splashColor: theme.colorScheme.secondary.withValues(alpha: 0.1),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                        horizontal: AppConstants.paddingMedium,
+                        vertical: AppConstants.paddingMedium,
                       ),
                       child: Row(
                         children: [
@@ -458,41 +481,41 @@ class _ModernCategoriesListWidget extends StatelessWidget {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: _primaryColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
+                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.label_outline_rounded,
-                              size: 16,
-                              color: _primaryColor,
+                              size: AppConstants.iconSizeSmall,
+                              color: theme.colorScheme.primary,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: AppConstants.paddingMedium),
                           Expanded(
                             child: Text(
                               category.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: _onSurfaceColor,
+                                color: theme.colorScheme.onSurface,
                               ),
                             ),
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                              horizontal: AppConstants.paddingSmall,
+                              vertical: AppConstants.paddingSmall,
                             ),
                             decoration: BoxDecoration(
-                              color: _accentColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
+                              color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                             ),
                             child: Text(
                               '${category.count}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: _accentColor,
+                                color: theme.colorScheme.secondary,
                               ),
                             ),
                           ),
@@ -518,30 +541,32 @@ class _ModernErrorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppConstants.paddingMedium),
       child: Column(
         children: [
           Container(
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.1),
+              color: theme.colorScheme.error.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(24),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.error_outline_rounded,
-              color: Colors.red,
+              color: theme.colorScheme.error,
               size: 24,
             ),
           ),
-          const SizedBox(height: 12),
-          const Text(
+          const SizedBox(height: AppConstants.paddingMedium),
+          Text(
             'Failed to load categories',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: _onSurfaceColor,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 4),
@@ -549,26 +574,26 @@ class _ModernErrorWidget extends StatelessWidget {
             'Please check your connection and try again',
             style: TextStyle(
               fontSize: 12,
-              color: _secondaryColor,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppConstants.paddingMedium),
           Material(
-            color: _accentColor,
-            borderRadius: BorderRadius.circular(20),
+            color: theme.colorScheme.primary,
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             child: InkWell(
               onTap: onRetry,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                  horizontal: AppConstants.paddingMedium,
+                  vertical: AppConstants.paddingSmall,
                 ),
-                child: const Text(
+                child: Text(
                   'Try Again',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: theme.colorScheme.onPrimary,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -591,12 +616,14 @@ class MiniDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
-      width: isExpanded ? 280 : 72,
+      width: isExpanded ? AppConstants.drawerWidth : AppConstants.miniDrawerWidth,
       child: Drawer(
-        backgroundColor: _surfaceColor,
+        backgroundColor: theme.colorScheme.surface,
         child: Column(
           children: [
             _buildModernMiniHeader(context),
@@ -605,21 +632,21 @@ class MiniDrawer extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 physics: const BouncingScrollPhysics(),
                 children: [
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppConstants.paddingSmall),
                   _buildModernMiniDrawerItem(
                     context,
                     icon: Icons.home_rounded,
                     title: 'Home',
                     onTap: () => AppNavigation.goHome(context),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppConstants.paddingSmall),
                   _buildModernMiniDrawerItem(
                     context,
                     icon: Icons.search_rounded,
                     title: 'Search',
                     onTap: () => AppNavigation.goToSearch(context),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppConstants.paddingSmall),
                   _buildModernMiniDrawerItem(
                     context,
                     icon: Icons.category_rounded,
@@ -628,14 +655,14 @@ class MiniDrawer extends StatelessWidget {
                       // Navigate to categories
                     },
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppConstants.paddingSmall),
                   _buildModernMiniDrawerItem(
                     context,
                     icon: Icons.info_outline_rounded,
                     title: 'About',
                     onTap: () => AppNavigation.goToAbout(context),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppConstants.paddingSmall),
                   _buildModernMiniDrawerItem(
                     context,
                     icon: Icons.contact_mail_outlined,
@@ -653,14 +680,16 @@ class MiniDrawer extends StatelessWidget {
 
   /// Modern mini header with logo and clean design
   Widget _buildModernMiniHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Container(
-      height: 120,
-      padding: const EdgeInsets.all(16),
+      height: AppConstants.miniDrawerHeaderHeight,
+      padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [_primaryColor, _accentColor],
+          colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
         ),
       ),
       child: Column(
@@ -671,17 +700,17 @@ class MiniDrawer extends StatelessWidget {
               alignment: Alignment.topRight,
               child: Material(
                 color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
                 child: InkWell(
                   onTap: onToggle,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
                   child: SizedBox(
                     width: 40,
                     height: 40,
                     child: Icon(
                       isExpanded ? Icons.chevron_left : Icons.chevron_right,
                       color: Colors.white,
-                      size: 20,
+                      size: AppConstants.iconSizeSmall,
                     ),
                   ),
                 ),
@@ -691,26 +720,26 @@ class MiniDrawer extends StatelessWidget {
           Container(
             width: isExpanded ? 48 : 40,
             height: isExpanded ? 48 : 40,
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppConstants.paddingSmall),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
               child: Image.asset(
-                'assets/logo.png',
+                '/logo.png',
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) => Icon(
                   Icons.article_rounded,
                   color: Colors.white,
-                  size: isExpanded ? 24 : 20,
+                  size: isExpanded ? 24 : AppConstants.iconSizeSmall,
                 ),
               ),
             ),
           ),
           if (isExpanded) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppConstants.paddingMedium),
             Text(
               AppConstants.appName,
               style: const TextStyle(
@@ -737,17 +766,22 @@ class MiniDrawer extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
+      margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          splashColor: _primaryColor.withValues(alpha: 0.1),
-          highlightColor: _primaryColor.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+          splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+          highlightColor: theme.colorScheme.primary.withValues(alpha: 0.05),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            padding: const EdgeInsets.symmetric(
+              vertical: AppConstants.paddingMedium,
+              horizontal: AppConstants.paddingSmall,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -755,23 +789,23 @@ class MiniDrawer extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: _primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                   ),
                   child: Icon(
                     icon,
-                    size: 20,
-                    color: _primaryColor,
+                    size: AppConstants.iconSizeSmall,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
                 if (isExpanded) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppConstants.paddingSmall),
                   Text(
                     title,
                     style: TextStyle(
                        fontSize: 11,
                        fontWeight: FontWeight.w500,
-                       color: _textColor,
+                       color: theme.colorScheme.onSurface,
                      ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
