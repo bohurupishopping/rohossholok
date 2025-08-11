@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../core/constants.dart';
@@ -40,6 +42,13 @@ class _SearchScreenState extends State<SearchScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     
+    // Add listener for search text changes
+    _searchController.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+    
     if (widget.initialQuery != null) {
       _searchController.text = widget.initialQuery!;
       _performSearch(widget.initialQuery!);
@@ -56,6 +65,7 @@ class _SearchScreenState extends State<SearchScreen> {
   
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _searchController.dispose();
     _scrollController.dispose();
     _searchFocusNode.dispose();
@@ -185,26 +195,99 @@ class _SearchScreenState extends State<SearchScreen> {
   
   Widget _buildSearchBar() {
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
-      child: Row(
-        children: [
-          Expanded(
-            child: SearchWidget(
-              controller: _searchController,
-              onSubmitted: _performSearch,
-              onClear: _clearSearch,
-              autofocus: widget.initialQuery == null,
+      margin: const EdgeInsets.all(AppConstants.paddingMedium),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocusNode,
+        decoration: InputDecoration(
+          hintText: 'খবর খুঁজুন...',
+          hintStyle: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 16,
+          ),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.search_rounded,
+              color: Theme.of(context).colorScheme.primary,
+              size: 20,
             ),
           ),
-          const SizedBox(width: AppConstants.paddingSmall),
-          IconButton(
-            onPressed: _toggleFilters,
-            icon: Icon(
-              _showFilters ? Icons.filter_list_off : Icons.filter_list,
-            ),
-            tooltip: _showFilters ? 'ফিল্টার লুকান' : 'ফিল্টার দেখান',
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_searchController.text.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(right: 4),
+                  child: IconButton(
+                    onPressed: _clearSearch,
+                    icon: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                        size: 16,
+                      ),
+                    ),
+                    tooltip: 'পরিষ্কার করুন',
+                  ),
+                ),
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  onPressed: _toggleFilters,
+                  icon: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: _showFilters
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : Theme.of(context).colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      _showFilters ? Icons.filter_list_off_rounded : Icons.filter_list_rounded,
+                      color: _showFilters
+                          ? Theme.of(context).colorScheme.onPrimaryContainer
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                      size: 16,
+                    ),
+                  ),
+                  tooltip: _showFilters ? 'ফিল্টার লুকান' : 'ফিল্টার দেখান',
+                ),
+              ),
+            ],
           ),
-        ],
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+        ),
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 16,
+        ),
+        onSubmitted: (value) {
+          if (value.trim().isNotEmpty) {
+            _performSearch(value.trim());
+          }
+        },
       ),
     );
   }
@@ -264,10 +347,10 @@ class _SearchScreenState extends State<SearchScreen> {
   
   Widget _buildSearchSuggestions() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: const EdgeInsets.symmetric(vertical: AppConstants.paddingMedium),
       child: Column(
         children: [
-          if (_searchHistory.isNotEmpty)
+          if (_searchHistory.isNotEmpty) ...[
             SearchSuggestions(
               suggestions: _searchHistory,
               onSuggestionTap: (suggestion) {
@@ -276,7 +359,8 @@ class _SearchScreenState extends State<SearchScreen> {
               },
               onClearHistory: _clearSearchHistory,
             ),
-          const SizedBox(height: AppConstants.paddingMedium),
+            const SizedBox(height: AppConstants.paddingLarge),
+          ],
           _buildPopularSearches(),
         ],
       ),
@@ -293,33 +377,100 @@ class _SearchScreenState extends State<SearchScreen> {
       'শিক্ষা',
     ];
     
-    return Card(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.paddingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'জনপ্রিয় অনুসন্ধান',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: AppConstants.paddingSmall),
-            Wrap(
-              spacing: AppConstants.paddingSmall,
-              runSpacing: AppConstants.paddingSmall,
-              children: popularSearches.map(
-                (search) => ActionChip(
-                  label: Text(search),
-                  onPressed: () {
-                    _searchController.text = search;
-                    _performSearch(search);
-                  },
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.trending_up_rounded,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    size: 16,
+                  ),
                 ),
+                const SizedBox(width: 8),
+                Text(
+                  'জনপ্রিয় অনুসন্ধান',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppConstants.paddingMedium),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: popularSearches.map(
+                (search) => _buildPopularSearchChip(search),
               ).toList(),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPopularSearchChip(String search) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          _searchController.text = search;
+          _performSearch(search);
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.search_rounded,
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                size: 14,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                search,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -339,15 +490,27 @@ class _SearchScreenState extends State<SearchScreen> {
     
     return CustomScrollView(
       controller: _scrollController,
+      physics: const BouncingScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.paddingMedium),
-            child: SearchResultsHeader(
-              query: searchQuery,
-              resultCount: posts.length,
-              category: _selectedCategory,
-              onClearSearch: _clearSearch,
+          child: Container(
+            margin: const EdgeInsets.all(AppConstants.paddingMedium),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppConstants.paddingMedium),
+              child: SearchResultsHeader(
+                query: searchQuery,
+                resultCount: posts.length,
+                category: _selectedCategory,
+                onClearSearch: _clearSearch,
+              ),
             ),
           ),
         ),
@@ -355,34 +518,32 @@ class _SearchScreenState extends State<SearchScreen> {
           padding: const EdgeInsets.symmetric(
             horizontal: AppConstants.paddingMedium,
           ),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (index < posts.length) {
-                  final post = posts[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: AppConstants.paddingMedium,
-                    ),
-                    child: PostCard(
-                      post: post,
-                      onTap: () {
-                        AppNavigation.goToPost(context, post.id);
-                      },
-                    ),
-                  );
-                } else if (hasMore) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: AppConstants.paddingMedium,
-                    ),
-                    child: Center(child: LoadingSpinner()),
-                  );
-                }
-                return null;
-              },
-              childCount: posts.length + (hasMore ? 1 : 0),
-            ),
+          sliver: SliverList.builder(
+            itemCount: posts.length + (hasMore ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index < posts.length) {
+                final post = posts[index];
+                return Container(
+                  margin: const EdgeInsets.only(
+                    bottom: AppConstants.paddingMedium,
+                  ),
+                  child: PostCard(
+                    post: post,
+                    onTap: () {
+                      AppNavigation.goToPost(context, post.id);
+                    },
+                  ),
+                );
+              } else if (hasMore) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppConstants.paddingLarge,
+                  ),
+                  child: const Center(child: LoadingSpinner()),
+                );
+              }
+              return const SizedBox.shrink();
+            },
           ),
         ),
       ],
@@ -407,29 +568,115 @@ class QuickSearchSuggestions extends StatelessWidget {
       return const SizedBox.shrink();
     }
     
-    return Card(
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.paddingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'দ্রুত অনুসন্ধান',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.history_rounded,
+                    color: Theme.of(context).colorScheme.onTertiaryContainer,
+                    size: 16,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'দ্রুত অনুসন্ধান',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: AppConstants.paddingSmall),
+            const SizedBox(height: AppConstants.paddingMedium),
             ...suggestions.map(
-              (suggestion) => ListTile(
-                leading: const Icon(Icons.trending_up),
-                title: Text(suggestion),
-                trailing: const Icon(Icons.north_west),
-                onTap: () => onSuggestionTap?.call(suggestion),
-                dense: true,
-              ),
+              (suggestion) => _buildSuggestionItem(context, suggestion),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionItem(BuildContext context, String suggestion) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onSuggestionTap?.call(suggestion),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    Icons.trending_up_rounded,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    size: 14,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    suggestion,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    Icons.north_west_rounded,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    size: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

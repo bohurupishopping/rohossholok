@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
@@ -144,18 +146,83 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       return const SizedBox.shrink();
     }
     
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: CachedNetworkImage(
-        imageUrl: featuredImageUrl,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: const Center(child: LoadingSpinner()),
+    return Container(
+      margin: const EdgeInsets.all(AppConstants.paddingMedium),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: CachedNetworkImage(
+            imageUrl: featuredImageUrl,
+            fit: BoxFit.cover,
+            memCacheHeight: 400,
+            memCacheWidth: 600,
+            placeholder: (context, url) => _buildImagePlaceholder(),
+            errorWidget: (context, url, error) => _buildImageError(),
+          ),
         ),
-        errorWidget: (context, url, error) => Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: const Icon(Icons.error),
+      ),
+    );
+  }
+  
+  Widget _buildImagePlaceholder() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Theme.of(context).colorScheme.surfaceContainerHighest,
+            Theme.of(context).colorScheme.surfaceContainerHigh,
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image_outlined,
+              size: 48,
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+            ),
+            const SizedBox(height: AppConstants.paddingSmall),
+            const LoadingSpinner(),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildImageError() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Theme.of(context).colorScheme.errorContainer.withOpacity(0.1),
+            Theme.of(context).colorScheme.surfaceContainerHighest,
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.broken_image_outlined,
+              size: 48,
+              color: Theme.of(context).colorScheme.error.withOpacity(0.7),
+            ),
+            const SizedBox(height: AppConstants.paddingSmall),
+            Text(
+              'ছবি লোড করা যায়নি',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -290,39 +357,87 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     required String text,
     required ThemeData theme,
   }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: theme.colorScheme.onSurfaceVariant,
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppConstants.paddingMedium,
+        vertical: AppConstants.paddingSmall,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.2),
+          width: 1,
         ),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              icon,
+              size: 14,
+              color: theme.colorScheme.primary,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
     );
   }
   
   Widget _buildCategoriesRow() {
+    final theme = Theme.of(context);
+    
     return Wrap(
       spacing: AppConstants.paddingSmall,
       runSpacing: AppConstants.paddingSmall,
       children: _post!.getCategoryNames().map(
-        (categoryName) => Chip(
-          label: Text(
-            categoryName,
-            style: Theme.of(context).textTheme.labelSmall,
+        (categoryName) => Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.paddingMedium,
+            vertical: AppConstants.paddingSmall,
           ),
-          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-          side: BorderSide.none,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          visualDensity: VisualDensity.compact,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+            border: Border.all(
+              color: theme.colorScheme.primary.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.tag_rounded,
+                size: 12,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                categoryName,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
         ),
       ).toList(),
     );
@@ -335,55 +450,106 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       margin: const EdgeInsets.symmetric(
         horizontal: AppConstants.paddingMedium,
       ),
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: const EdgeInsets.all(AppConstants.paddingLarge),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'পোস্ট তথ্য',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                ),
+                child: Icon(
+                  Icons.info_outline_rounded,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: AppConstants.paddingMedium),
+              Text(
+                'পোস্ট তথ্য',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppConstants.paddingSmall),
-          _buildMetaRow('প্রকাশিত', _post!.getFormattedDate()),
-          _buildMetaRow('আপডেট', _post!.getFormattedModifiedDate()),
-          _buildMetaRow('পড়ার সময়', '${_post!.getEstimatedReadingTime()} মিনিট'),
+          const SizedBox(height: AppConstants.paddingMedium),
+          _buildMetaRow('প্রকাশিত', _post!.getFormattedDate(), Icons.calendar_today_rounded),
+          _buildMetaRow('আপডেট', _post!.getFormattedModifiedDate(), Icons.update_rounded),
+          _buildMetaRow('পড়ার সময়', '${_post!.getEstimatedReadingTime()} মিনিট', Icons.schedule_rounded),
           if (_post!.getAuthorName().isNotEmpty)
-            _buildMetaRow('লেখক', _post!.getAuthorName()),
+            _buildMetaRow('লেখক', _post!.getAuthorName(), Icons.person_rounded),
         ],
       ),
     );
   }
   
-  Widget _buildMetaRow(String label, String value) {
+  Widget _buildMetaRow(String label, String value, IconData icon) {
     final theme = Theme.of(context);
     
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: AppConstants.paddingSmall / 2,
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppConstants.paddingSmall),
+      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              '$label:',
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              icon,
+              size: 16,
+              color: theme.colorScheme.primary,
             ),
           ),
+          const SizedBox(width: AppConstants.paddingMedium),
           Expanded(
-            child: Text(
-              value,
-              style: theme.textTheme.bodySmall,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

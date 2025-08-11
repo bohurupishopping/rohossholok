@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:intl/intl.dart';
-import 'package:flutter/foundation.dart';
 
 /// Utility functions for the Rohossholok app
 class AppUtils {

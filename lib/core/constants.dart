@@ -5,7 +5,7 @@ class AppConstants {
   static const String appVersion = '1.0.0';
   
   // WordPress API Configuration
-  static const String baseUrl = 'https://rohossholok.in';
+  static const String baseUrl = 'https://corsproxy.io/https://rohossholok.in';
   static const String apiBaseUrl = '$baseUrl/wp-json/wp/v2';
   
   // API Endpoints

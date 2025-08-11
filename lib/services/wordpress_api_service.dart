@@ -147,7 +147,7 @@ class WordPressApiService {
     bool useCache = true,
   }) async {
     // Generate cache key
-    final cacheKey = 'categories_${page}_${perPage}_${hideEmpty}';
+    final cacheKey = 'categories_${page}_${perPage}_$hideEmpty';
     
     // Check cache first if enabled
     if (useCache) {
@@ -231,7 +231,7 @@ class WordPressApiService {
     bool useCache = true,
   }) async {
     // Generate cache key
-    final cacheKey = 'pages_${page}_${perPage}_${includeEmbedded}';
+    final cacheKey = 'pages_${page}_${perPage}_$includeEmbedded';
     
     // Check cache first if enabled
     if (useCache) {

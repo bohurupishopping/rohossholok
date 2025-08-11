@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../core/constants.dart';
@@ -5,8 +7,6 @@ import '../widgets/custom_app_bar.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/post_card.dart';
 import '../widgets/category_chip.dart';
-import '../widgets/loading_spinner.dart';
-import '../widgets/error_widget.dart';
 import '../providers/posts_cubit.dart';
 import '../providers/categories_cubit.dart';
 import '../routes/app_router.dart';
@@ -129,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
           await context.read<PostsCubit>().loadPosts(refresh: true);
           
           // Then refresh categories if they were already loaded
-          if (mounted && _hasLoadedCategories) {
+          if (_hasLoadedCategories && mounted) {
             await context.read<CategoriesCubit>().refreshCategories();
           }
         },
@@ -150,71 +150,154 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context, state) {
           return state.when(
             initial: () {
-              // Show placeholder or load categories lazily when visible
+              // Show modern placeholder with rounded design
               if (!_hasLoadedCategories) {
-                return GestureDetector(
-                  onTap: () {
-                    _hasLoadedCategories = true;
-                    context.read<CategoriesCubit>().loadCategoriesIfNeeded();
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.all(AppConstants.paddingMedium),
-                    padding: const EdgeInsets.all(AppConstants.paddingMedium),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.category_outlined,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: AppConstants.paddingSmall),
-                        Text(
-                          'বিভাগসমূহ দেখুন',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const Spacer(),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
+                return _buildCategoriesPlaceholder(context);
               }
               return const SizedBox.shrink();
             },
-            loading: () => const Padding(
-              padding: EdgeInsets.all(AppConstants.paddingMedium),
-              child: SizedBox(
-                height: 40,
-                child: LoadingSpinner(),
-              ),
-            ),
+            loading: () => _buildCategoriesLoading(),
             loaded: (categories) => _buildCategoriesList(categories),
-            error: (message) => Padding(
-              padding: const EdgeInsets.all(AppConstants.paddingMedium),
-              child: AppErrorWidget(
-                message: message,
-                onRetry: () {
-                  _hasLoadedCategories = true;
-                  context.read<CategoriesCubit>().loadCategories();
-                },
-                showRetryButton: true,
-              ),
-            ),
+            error: (message) => _buildCategoriesError(context, message),
           );
         },
       ),
     );
   }
   
+  // Modern categories placeholder with rounded design
+  Widget _buildCategoriesPlaceholder(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppConstants.paddingMedium,
+        AppConstants.paddingSmall,
+        AppConstants.paddingMedium,
+        AppConstants.paddingSmall,
+      ),
+      child: Material(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+        child: InkWell(
+          onTap: () {
+            _hasLoadedCategories = true;
+            context.read<CategoriesCubit>().loadCategoriesIfNeeded();
+          },
+          borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+          child: Padding(
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppConstants.paddingSmall),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                  ),
+                  child: Icon(
+                    Icons.category_rounded,
+                    size: AppConstants.iconSizeSmall,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: AppConstants.paddingMedium),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'বিভাগসমূহ দেখুন',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'সকল বিভাগ ব্রাউজ করুন',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: AppConstants.iconSizeSmall,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Modern loading state for categories
+  Widget _buildCategoriesLoading() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppConstants.paddingMedium,
+        AppConstants.paddingSmall,
+        AppConstants.paddingMedium,
+        AppConstants.paddingSmall,
+      ),
+      height: 56,
+      child: const Center(
+        child: SizedBox(
+          height: 24,
+          width: 24,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
+
+  // Modern error state for categories
+  Widget _buildCategoriesError(BuildContext context, String message) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppConstants.paddingMedium,
+        AppConstants.paddingSmall,
+        AppConstants.paddingMedium,
+        AppConstants.paddingSmall,
+      ),
+      child: Material(
+        color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+        child: Padding(
+          padding: const EdgeInsets.all(AppConstants.paddingMedium),
+          child: Row(
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                color: Theme.of(context).colorScheme.error,
+                size: AppConstants.iconSizeSmall,
+              ),
+              const SizedBox(width: AppConstants.paddingMedium),
+              Expanded(
+                child: Text(
+                  message,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  _hasLoadedCategories = true;
+                  context.read<CategoriesCubit>().loadCategories();
+                },
+                child: const Text('পুনরায় চেষ্টা'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCategoriesList(List categories) {
     if (categories.isEmpty) {
       return const SizedBox.shrink();
@@ -231,16 +314,33 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(
               horizontal: AppConstants.paddingMedium,
             ),
-            child: Text(
-              'বিভাগসমূহ',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
+                  ),
+                  child: Icon(
+                    Icons.category_rounded,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: AppConstants.paddingSmall),
+                Text(
+                  'বিভাগসমূহ',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: AppConstants.paddingSmall),
+          const SizedBox(height: AppConstants.paddingMedium),
           SizedBox(
-            height: 40,
+            height: 44,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(
@@ -277,23 +377,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return BlocBuilder<PostsCubit, PostsState>(
       builder: (context, state) {
         return state.when(
-          initial: () => const SliverFillRemaining(
-            child: Center(child: LoadingSpinner()),
-          ),
-          loading: () => const SliverFillRemaining(
-            child: Center(child: LoadingSpinner()),
-          ),
+          initial: () => _buildPostsLoading(),
+          loading: () => _buildPostsLoading(),
           loaded: (posts, hasMore, currentPage, categoryId, searchQuery) {
             if (posts.isEmpty) {
-              return SliverFillRemaining(
-                child: NoPostsWidget(
-                  onRefresh: () => context.read<PostsCubit>().loadPosts(refresh: true),
-                ),
-              );
+              return _buildEmptyPosts(context);
             }
             
             return SliverPadding(
-              padding: const EdgeInsets.all(AppConstants.paddingMedium),
+              padding: const EdgeInsets.fromLTRB(
+                AppConstants.paddingMedium,
+                AppConstants.paddingSmall,
+                AppConstants.paddingMedium,
+                AppConstants.paddingMedium,
+              ),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
@@ -314,12 +411,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       );
                     } else if (hasMore) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: AppConstants.paddingMedium,
-                        ),
-                        child: Center(child: LoadingSpinner()),
-                      );
+                      return _buildLoadMoreIndicator();
                     }
                     return null;
                   },
@@ -328,14 +420,191 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             );
           },
-          error: (message) => SliverFillRemaining(
-            child: AppErrorWidget(
-              message: message,
-              onRetry: () => context.read<PostsCubit>().loadPosts(),
-            ),
-          ),
+          error: (message) => _buildPostsError(context, message),
         );
       },
+    );
+  }
+
+  // Modern loading state for posts
+  Widget _buildPostsLoading() {
+    return const SliverFillRemaining(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              height: 32,
+              width: 32,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            ),
+            SizedBox(height: AppConstants.paddingMedium),
+            Text(
+              'পোস্ট লোড হচ্ছে...',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Modern empty state for posts
+  Widget _buildEmptyPosts(BuildContext context) {
+    return SliverFillRemaining(
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.all(AppConstants.paddingLarge),
+          padding: const EdgeInsets.all(AppConstants.paddingLarge),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppConstants.paddingLarge),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+                ),
+                child: Icon(
+                  Icons.article_outlined,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(height: AppConstants.paddingLarge),
+              Text(
+                'কোনো পোস্ট পাওয়া যায়নি',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppConstants.paddingSmall),
+              Text(
+                'নতুন পোস্ট দেখতে রিফ্রেশ করুন',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppConstants.paddingLarge),
+              FilledButton.icon(
+                onPressed: () => context.read<PostsCubit>().loadPosts(refresh: true),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('রিফ্রেশ করুন'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Modern error state for posts
+  Widget _buildPostsError(BuildContext context, String message) {
+    return SliverFillRemaining(
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.all(AppConstants.paddingLarge),
+          padding: const EdgeInsets.all(AppConstants.paddingLarge),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.error.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                ),
+                child: Icon(
+                  Icons.error_outline_rounded,
+                  size: 32,
+                  color: Theme.of(context).colorScheme.onErrorContainer,
+                ),
+              ),
+              const SizedBox(height: AppConstants.paddingMedium),
+              Text(
+                'কিছু সমস্যা হয়েছে',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppConstants.paddingSmall),
+              Text(
+                message,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppConstants.paddingLarge),
+              FilledButton.icon(
+                onPressed: () => context.read<PostsCubit>().loadPosts(),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('পুনরায় চেষ্টা'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Modern load more indicator
+  Widget _buildLoadMoreIndicator() {
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        vertical: AppConstants.paddingMedium,
+      ),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.paddingLarge,
+            vertical: AppConstants.paddingMedium,
+          ),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: AppConstants.paddingMedium),
+              Text(
+                'আরো পোস্ট লোড হচ্ছে...',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

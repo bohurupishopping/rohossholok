@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../models/category_model.dart';
 import '../core/constants.dart';
@@ -23,55 +25,100 @@ class CategoryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return FilterChip(
-      label: Text(
-        showCount ? category.displayNameWithCount : category.name,
-        style: _getTextStyle(theme),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(_getBorderRadius()),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: _getPadding(),
+          decoration: BoxDecoration(
+            color: _getBackgroundColor(theme),
+            borderRadius: BorderRadius.circular(_getBorderRadius()),
+            border: Border.all(
+              color: _getBorderColor(theme),
+              width: 1.5,
+            ),
+            boxShadow: isSelected ? [
+              BoxShadow(
+                color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ] : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isSelected) ...[
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Flexible(
+                child: Text(
+                  showCount ? category.displayNameWithCount : category.name,
+                  style: _getTextStyle(theme),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      selected: isSelected,
-      onSelected: onTap != null ? (_) => onTap!() : null,
-      backgroundColor: theme.colorScheme.surfaceContainerLow,
-      selectedColor: theme.colorScheme.primaryContainer,
-      checkmarkColor: theme.colorScheme.onPrimaryContainer,
-      side: BorderSide(
-        color: isSelected
-            ? theme.colorScheme.primary
-            : theme.colorScheme.outline,
-        width: 1,
-      ),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: _getVisualDensity(),
-      padding: _getPadding(),
     );
   }
   
   TextStyle? _getTextStyle(ThemeData theme) {
-    switch (size) {
-      case CategoryChipSize.small:
-        return theme.textTheme.labelSmall?.copyWith(
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-        );
-      case CategoryChipSize.medium:
-        return theme.textTheme.labelMedium?.copyWith(
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-        );
-      case CategoryChipSize.large:
-        return theme.textTheme.labelLarge?.copyWith(
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-        );
-    }
+    final baseStyle = switch (size) {
+      CategoryChipSize.small => theme.textTheme.labelSmall,
+      CategoryChipSize.medium => theme.textTheme.labelMedium,
+      CategoryChipSize.large => theme.textTheme.labelLarge,
+    };
+    
+    return baseStyle?.copyWith(
+      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+      color: isSelected 
+          ? theme.colorScheme.primary
+          : theme.colorScheme.onSurfaceVariant,
+      fontSize: switch (size) {
+        CategoryChipSize.small => 11,
+        CategoryChipSize.medium => 12,
+        CategoryChipSize.large => 14,
+      },
+    );
   }
   
-  VisualDensity _getVisualDensity() {
-    switch (size) {
-      case CategoryChipSize.small:
-        return VisualDensity.compact;
-      case CategoryChipSize.medium:
-        return VisualDensity.standard;
-      case CategoryChipSize.large:
-        return VisualDensity.comfortable;
+  Color _getBackgroundColor(ThemeData theme) {
+    if (isSelected) {
+      return theme.colorScheme.primaryContainer.withValues(alpha: 0.9);
     }
+    return theme.colorScheme.surfaceContainerLow;
   }
+  
+  Color _getBorderColor(ThemeData theme) {
+    if (isSelected) {
+      return theme.colorScheme.primary;
+    }
+    return theme.colorScheme.outline.withValues(alpha: 0.3);
+  }
+  
+  double _getBorderRadius() {
+    return switch (size) {
+      CategoryChipSize.small => AppConstants.borderRadiusMedium,
+      CategoryChipSize.medium => AppConstants.borderRadiusLarge,
+      CategoryChipSize.large => AppConstants.borderRadiusLarge + 2,
+    };
+  }
+  
   
   EdgeInsets _getPadding() {
     switch (size) {
@@ -132,27 +179,7 @@ class CategoryList extends StatelessWidget {
           if (showAllOption && index == 0) {
             return Padding(
               padding: const EdgeInsets.only(right: AppConstants.paddingSmall),
-              child: FilterChip(
-                label: Text(
-                  'সব',
-                  style: _getAllChipTextStyle(context),
-                ),
-                selected: selectedCategoryId == null,
-                onSelected: (_) => onCategorySelected?.call(null),
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-                selectedColor: Theme.of(context).colorScheme.primaryContainer,
-                checkmarkColor: Theme.of(context).colorScheme.onPrimaryContainer,
-                side: BorderSide(
-                  color: selectedCategoryId == null
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.outline,
-                  width: 1,
-                ),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: chipSize == CategoryChipSize.small
-                    ? VisualDensity.compact
-                    : VisualDensity.standard,
-              ),
+              child: _buildAllChip(context),
             );
           }
           
@@ -185,22 +212,106 @@ class CategoryList extends StatelessWidget {
     }
   }
   
+  Widget _buildAllChip(BuildContext context) {
+    final theme = Theme.of(context);
+    final isSelected = selectedCategoryId == null;
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onCategorySelected?.call(null),
+        borderRadius: BorderRadius.circular(_getAllChipBorderRadius()),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: _getAllChipPadding(),
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.9)
+                : theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(_getAllChipBorderRadius()),
+            border: Border.all(
+              color: isSelected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outline.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+            boxShadow: isSelected ? [
+              BoxShadow(
+                color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ] : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isSelected) ...[
+                Icon(
+                  Icons.apps_rounded,
+                  size: 14,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                'সব',
+                style: _getAllChipTextStyle(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
   TextStyle? _getAllChipTextStyle(BuildContext context) {
     final theme = Theme.of(context);
-    switch (chipSize) {
-      case CategoryChipSize.small:
-        return theme.textTheme.labelSmall?.copyWith(
-          fontWeight: selectedCategoryId == null ? FontWeight.w600 : FontWeight.w500,
-        );
-      case CategoryChipSize.medium:
-        return theme.textTheme.labelMedium?.copyWith(
-          fontWeight: selectedCategoryId == null ? FontWeight.w600 : FontWeight.w500,
-        );
-      case CategoryChipSize.large:
-        return theme.textTheme.labelLarge?.copyWith(
-          fontWeight: selectedCategoryId == null ? FontWeight.w600 : FontWeight.w500,
-        );
-    }
+    final isSelected = selectedCategoryId == null;
+    
+    final baseStyle = switch (chipSize) {
+      CategoryChipSize.small => theme.textTheme.labelSmall,
+      CategoryChipSize.medium => theme.textTheme.labelMedium,
+      CategoryChipSize.large => theme.textTheme.labelLarge,
+    };
+    
+    return baseStyle?.copyWith(
+      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+      color: isSelected 
+          ? theme.colorScheme.primary
+          : theme.colorScheme.onSurfaceVariant,
+      fontSize: switch (chipSize) {
+        CategoryChipSize.small => 11,
+        CategoryChipSize.medium => 12,
+        CategoryChipSize.large => 14,
+      },
+    );
+  }
+  
+  double _getAllChipBorderRadius() {
+    return switch (chipSize) {
+      CategoryChipSize.small => AppConstants.borderRadiusMedium,
+      CategoryChipSize.medium => AppConstants.borderRadiusLarge,
+      CategoryChipSize.large => AppConstants.borderRadiusLarge + 2,
+    };
+  }
+  
+  EdgeInsets _getAllChipPadding() {
+    return switch (chipSize) {
+      CategoryChipSize.small => const EdgeInsets.symmetric(
+        horizontal: AppConstants.paddingSmall,
+        vertical: 6,
+      ),
+      CategoryChipSize.medium => const EdgeInsets.symmetric(
+        horizontal: AppConstants.paddingMedium,
+        vertical: 8,
+      ),
+      CategoryChipSize.large => const EdgeInsets.symmetric(
+        horizontal: AppConstants.paddingLarge,
+        vertical: 10,
+      ),
+    };
   }
 }
 

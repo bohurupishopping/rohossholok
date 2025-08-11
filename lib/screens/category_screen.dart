@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../core/constants.dart';
@@ -44,6 +46,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
@@ -78,6 +81,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
         },
         child: CustomScrollView(
           controller: _scrollController,
+          physics: const BouncingScrollPhysics(),
           slivers: [
             _buildCategoryInfo(),
             _buildPostsSection(),
@@ -115,52 +119,122 @@ class _CategoryScreenState extends State<CategoryScreen> {
     
     return Container(
       margin: const EdgeInsets.all(AppConstants.paddingMedium),
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+          color: theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.folder,
-                color: theme.colorScheme.primary,
-                size: 24,
-              ),
-              const SizedBox(width: AppConstants.paddingSmall),
-              Expanded(
-                child: Text(
-                  category.name,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.paddingLarge),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Icon(
+                    Icons.folder_rounded,
+                    color: theme.colorScheme.onPrimaryContainer,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: AppConstants.paddingMedium),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        category.name,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.article_rounded,
+                              color: theme.colorScheme.onSecondaryContainer,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${category.count} টি পোস্ট',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSecondaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (category.description?.isNotEmpty == true) ...[
+              const SizedBox(height: AppConstants.paddingMedium),
+              Container(
+                padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withOpacity(0.1),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.tertiaryContainer,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.info_outline_rounded,
+                        color: theme.colorScheme.onTertiaryContainer,
+                        size: 16,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        category.description,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: AppConstants.paddingSmall),
-          Text(
-            '${category.count} টি পোস্ট',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          if (category.description?.isNotEmpty == true) ...
-          [
-            const SizedBox(height: AppConstants.paddingSmall),
-            Text(
-              category.description,
-              style: theme.textTheme.bodyMedium,
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -194,38 +268,38 @@ class _CategoryScreenState extends State<CategoryScreen> {
             }
             
             return SliverPadding(
-              padding: const EdgeInsets.all(AppConstants.paddingMedium),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    if (index < posts.length) {
-                      final post = posts[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: AppConstants.paddingMedium,
-                        ),
-                        child: PostCard(
-                          post: post,
-                          onTap: () {
-                            AppNavigation.goToPost(
-                              context,
-                              post.id,
-                            );
-                          },
-                        ),
-                      );
-                    } else if (hasMore) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: AppConstants.paddingMedium,
-                        ),
-                        child: Center(child: LoadingSpinner()),
-                      );
-                    }
-                    return null;
-                  },
-                  childCount: posts.length + (hasMore ? 1 : 0),
-                ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.paddingMedium,
+              ),
+              sliver: SliverList.builder(
+                itemCount: posts.length + (hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index < posts.length) {
+                    final post = posts[index];
+                    return Container(
+                      margin: const EdgeInsets.only(
+                        bottom: AppConstants.paddingMedium,
+                      ),
+                      child: PostCard(
+                        post: post,
+                        onTap: () {
+                          AppNavigation.goToPost(
+                            context,
+                            post.id,
+                          );
+                        },
+                      ),
+                    );
+                  } else if (hasMore) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppConstants.paddingLarge,
+                      ),
+                      child: const Center(child: LoadingSpinner()),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
             );
           },
@@ -298,11 +372,12 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
     
     return GridView.builder(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      physics: const BouncingScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
         crossAxisSpacing: AppConstants.paddingMedium,
         mainAxisSpacing: AppConstants.paddingMedium,
-        childAspectRatio: 1.5,
+        childAspectRatio: 1.3,
       ),
       itemCount: categories.length,
       itemBuilder: (context, index) {
@@ -315,8 +390,8 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
   Widget _buildCategoryCard(dynamic category) {
     final theme = Theme.of(context);
     
-    return Card(
-      elevation: 2,
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: () {
           AppNavigation.goToCategory(
@@ -325,35 +400,91 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
             category.name,
           );
         },
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-        child: Padding(
-          padding: const EdgeInsets.all(AppConstants.paddingMedium),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.folder,
-                color: theme.colorScheme.primary,
-                size: 32,
-              ),
-              const SizedBox(height: AppConstants.paddingSmall),
-              Text(
-                category.name,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppConstants.paddingMedium),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.folder_rounded,
+                        color: theme.colorScheme.onPrimaryContainer,
+                        size: 20,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: theme.colorScheme.onSurfaceVariant,
+                        size: 12,
+                      ),
+                    ),
+                  ],
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: AppConstants.paddingSmall),
-              Text(
-                '${category.count} টি পোস্ট',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(height: AppConstants.paddingMedium),
+                Text(
+                  category.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.article_rounded,
+                        color: theme.colorScheme.onSecondaryContainer,
+                        size: 12,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${category.count}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSecondaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

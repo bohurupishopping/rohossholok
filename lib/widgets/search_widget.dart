@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../core/constants.dart';
 
@@ -70,10 +72,11 @@ class _SearchWidgetState extends State<SearchWidget> {
     
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: theme.colorScheme.outline.withValues(alpha: 0.2),
+          width: 1,
         ),
       ),
       child: TextField(
@@ -81,28 +84,53 @@ class _SearchWidgetState extends State<SearchWidget> {
         autofocus: widget.autofocus,
         textInputAction: TextInputAction.search,
         onSubmitted: widget.onSubmitted,
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontSize: 16,
+        ),
         decoration: InputDecoration(
           hintText: widget.hintText,
-          hintStyle: theme.textTheme.bodyMedium?.copyWith(
+          hintStyle: TextStyle(
             color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 16,
           ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: theme.colorScheme.onSurfaceVariant,
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.search_rounded,
+              color: theme.colorScheme.primary,
+              size: 20,
+            ),
           ),
           suffixIcon: _hasText
-              ? IconButton(
-                  icon: Icon(
-                    Icons.clear,
-                    color: theme.colorScheme.onSurfaceVariant,
+              ? Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  child: IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: theme.colorScheme.onErrorContainer,
+                        size: 16,
+                      ),
+                    ),
+                    onPressed: _onClear,
+                    tooltip: 'পরিষ্কার করুন',
                   ),
-                  onPressed: _onClear,
                 )
               : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.paddingMedium,
-            vertical: AppConstants.paddingSmall,
+            horizontal: 16,
+            vertical: 16,
           ),
         ),
       ),
@@ -131,41 +159,156 @@ class SearchSuggestions extends StatelessWidget {
       return const SizedBox.shrink();
     }
     
-    return Card(
-      margin: EdgeInsets.zero,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
             padding: const EdgeInsets.all(AppConstants.paddingMedium),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'সাম্প্রতিক অনুসন্ধান',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.history_rounded,
+                    color: theme.colorScheme.onTertiaryContainer,
+                    size: 16,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'সাম্প্রতিক অনুসন্ধান',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                 ),
                 if (onClearHistory != null)
-                  TextButton(
-                    onPressed: onClearHistory,
-                    child: const Text('পরিষ্কার করুন'),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onClearHistory,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.clear_all_rounded,
+                              color: theme.colorScheme.onErrorContainer,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'পরিষ্কার করুন',
+                              style: TextStyle(
+                                color: theme.colorScheme.onErrorContainer,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
+          ),
           ...suggestions.map(
-            (suggestion) => ListTile(
-              leading: const Icon(Icons.history),
-              title: Text(suggestion),
-              trailing: const Icon(Icons.north_west),
-              onTap: () => onSuggestionTap?.call(suggestion),
-              dense: true,
-            ),
+            (suggestion) => _buildSuggestionItem(context, suggestion),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSuggestionItem(BuildContext context, String suggestion) {
+    final theme = Theme.of(context);
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 2,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onSuggestionTap?.call(suggestion),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    Icons.history_rounded,
+                    color: theme.colorScheme.onPrimaryContainer,
+                    size: 14,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    suggestion,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    Icons.north_west_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    size: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -195,91 +338,296 @@ class SearchFilters extends StatelessWidget {
     final theme = Theme.of(context);
     final hasFilters = selectedCategory != null || dateRange != null;
     
-    return Card(
-      margin: EdgeInsets.zero,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.paddingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'ফিল্টার',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.filter_list_rounded,
+                    color: theme.colorScheme.onPrimaryContainer,
+                    size: 16,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'ফিল্টার',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
                   ),
                 ),
                 if (hasFilters && onClearFilters != null)
-                  TextButton(
-                    onPressed: onClearFilters,
-                    child: const Text('পরিষ্কার করুন'),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onClearFilters,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.clear_all_rounded,
+                              color: theme.colorScheme.onErrorContainer,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'পরিষ্কার করুন',
+                              style: TextStyle(
+                                color: theme.colorScheme.onErrorContainer,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
               ],
             ),
-            const SizedBox(height: AppConstants.paddingSmall),
+            const SizedBox(height: AppConstants.paddingMedium),
             
             // Category filter
-            Text(
+            _buildFilterSection(
+              context,
               'বিভাগ',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: AppConstants.paddingSmall),
-            DropdownButtonFormField<String>(
-              value: selectedCategory,
-              decoration: const InputDecoration(
-                hintText: 'বিভাগ নির্বাচন করুন',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: AppConstants.paddingMedium,
-                  vertical: AppConstants.paddingSmall,
-                ),
-              ),
-              items: [
-                const DropdownMenuItem<String>(
-                  value: null,
-                  child: Text('সব বিভাগ'),
-                ),
-                ...categories.map(
-                  (category) => DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category),
-                  ),
-                ),
-              ],
-              onChanged: onCategoryChanged,
+              Icons.folder_rounded,
+              _buildCategoryDropdown(context),
             ),
             
             const SizedBox(height: AppConstants.paddingMedium),
             
             // Date range filter
-            Text(
+            _buildFilterSection(
+              context,
               'তারিখ',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
+              Icons.calendar_today_rounded,
+              _buildDateRangeButton(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterSection(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Widget child,
+  ) {
+    final theme = Theme.of(context);
+    
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+           color: theme.colorScheme.outline.withValues(alpha: 0.1),
+           width: 1,
+         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  icon,
+                  color: theme.colorScheme.onSecondaryContainer,
+                  size: 14,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppConstants.paddingSmall),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryDropdown(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: selectedCategory,
+        decoration: InputDecoration(
+          hintText: 'বিভাগ নির্বাচন করুন',
+          hintStyle: TextStyle(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 14,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.tertiaryContainer,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              Icons.category_rounded,
+              color: theme.colorScheme.onTertiaryContainer,
+              size: 16,
+            ),
+          ),
+        ),
+        items: [
+          DropdownMenuItem<String>(
+            value: null,
+            child: Text(
+              'সব বিভাগ',
+              style: TextStyle(
+                color: theme.colorScheme.onSurface,
+                fontSize: 14,
               ),
             ),
-            const SizedBox(height: AppConstants.paddingSmall),
-            OutlinedButton.icon(
-              onPressed: () => _showDateRangePicker(context),
-              icon: const Icon(Icons.date_range),
-              label: Text(
-                dateRange != null
-                    ? '${_formatDate(dateRange!.start)} - ${_formatDate(dateRange!.end)}'
-                    : 'তারিখ নির্বাচন করুন',
-              ),
-              style: OutlinedButton.styleFrom(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.paddingMedium,
-                  vertical: AppConstants.paddingSmall,
+          ),
+          ...categories.map(
+            (category) => DropdownMenuItem<String>(
+              value: category,
+              child: Text(
+                category,
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontSize: 14,
                 ),
               ),
             ),
-          ],
+          ),
+        ],
+        onChanged: onCategoryChanged,
+        dropdownColor: theme.colorScheme.surface,
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateRangeButton(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showDateRangePicker(context),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  Icons.date_range_rounded,
+                  color: theme.colorScheme.onTertiaryContainer,
+                  size: 16,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  dateRange != null
+                      ? '${_formatDate(dateRange!.start)} - ${_formatDate(dateRange!.end)}'
+                      : 'তারিখ নির্বাচন করুন',
+                  style: TextStyle(
+                    color: dateRange != null
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                    fontWeight: dateRange != null ? FontWeight.w500 : FontWeight.normal,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  Icons.arrow_drop_down_rounded,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  size: 16,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -325,52 +673,146 @@ class SearchResultsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return Card(
-      margin: EdgeInsets.zero,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.paddingMedium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: RichText(
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.search_rounded,
+                color: theme.colorScheme.onPrimaryContainer,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RichText(
                     text: TextSpan(
-                      style: theme.textTheme.bodyMedium,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
                       children: [
                         const TextSpan(text: '"'),
                         TextSpan(
                           text: query,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
                         const TextSpan(text: '" এর জন্য '),
-                        TextSpan(
-                          text: '$resultCount',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        const TextSpan(text: ' টি ফলাফল পাওয়া গেছে'),
-                        if (category != null) ...
-                        [
-                          const TextSpan(text: ' "'),
-                          TextSpan(
-                            text: category!,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          const TextSpan(text: '" বিভাগে'),
-                        ],
                       ],
                     ),
                   ),
-                ),
-                if (onClearSearch != null)
-                  IconButton(
-                    onPressed: onClearSearch,
-                    icon: const Icon(Icons.close),
-                    tooltip: 'অনুসন্ধান পরিষ্কার করুন',
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.article_rounded,
+                              color: theme.colorScheme.onSecondaryContainer,
+                              size: 12,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$resultCount টি ফলাফল',
+                              style: TextStyle(
+                                color: theme.colorScheme.onSecondaryContainer,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (category != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.tertiaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.folder_rounded,
+                                color: theme.colorScheme.onTertiaryContainer,
+                                size: 12,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                category!,
+                                style: TextStyle(
+                                  color: theme.colorScheme.onTertiaryContainer,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-              ],
+                ],
+              ),
             ),
+            if (onClearSearch != null)
+              Container(
+                margin: const EdgeInsets.only(left: 8),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onClearSearch,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: theme.colorScheme.onErrorContainer,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
