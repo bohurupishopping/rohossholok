@@ -63,13 +63,13 @@ class PostsCubit extends Cubit<PostsState> {
         page: 1,
         categoryId: categoryId,
         search: search,
-        perPage: 5, // Reduced initial load
+        perPage: 10, // Consistent page size for initial load
         useCache: useCache,
       );
       
       emit(PostsState.loaded(
         posts: posts,
-        hasReachedMax: posts.length < 5, // Updated to match perPage
+        hasReachedMax: posts.length < 10, // Updated to match perPage
         currentPage: 1,
         categoryId: categoryId,
         searchQuery: search,

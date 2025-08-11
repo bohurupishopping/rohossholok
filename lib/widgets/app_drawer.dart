@@ -7,8 +7,13 @@ import '../routes/app_router.dart';
 import '../providers/categories_cubit.dart';
 import '../models/category_model.dart';
 
-// Import theme colors - these will be replaced with theme.colorScheme usage
-// Keeping constants for backward compatibility during transition
+// Modern UI Theme matching home_screen.dart and category_screen.dart
+class _ModernTheme {
+  static const Color surface = Colors.white;
+  static const Color textPrimary = Color(0xFF1B1D28);
+  static const Color textSecondary = Color(0xFF7D7F8B);
+  static const Color primary = Color(0xFF4C6FFF);
+}
 
 /// Modern navigation drawer with optimized performance and clean UI
 class AppDrawer extends StatelessWidget {
@@ -16,10 +21,10 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     
     return Drawer(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: _ModernTheme.surface,
       child: Column(
         children: [
           _buildModernHeader(context),
@@ -45,7 +50,7 @@ class AppDrawer extends StatelessWidget {
 
   /// Modern header with logo and clean design
   Widget _buildModernHeader(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     
     return Container(
       height: AppConstants.drawerHeaderHeight,
@@ -59,7 +64,7 @@ class AppDrawer extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+          colors: [_ModernTheme.primary, _ModernTheme.primary.withValues(alpha: 0.8)],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(AppConstants.borderRadiusExtraLarge),
@@ -128,7 +133,7 @@ class AppDrawer extends StatelessWidget {
 
   /// Custom divider with modern styling
   Widget _buildDivider(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     
     return Container(
       margin: const EdgeInsets.symmetric(
@@ -137,7 +142,7 @@ class AppDrawer extends StatelessWidget {
       ),
       height: 1,
       decoration: BoxDecoration(
-        color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+        color: _ModernTheme.textSecondary.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(1),
       ),
     );
@@ -179,7 +184,7 @@ class AppDrawer extends StatelessWidget {
   Widget _buildCategoriesSection(BuildContext context) {
     return BlocBuilder<CategoriesCubit, CategoriesState>(
       builder: (context, state) {
-        final theme = Theme.of(context);
+        Theme.of(context);
         
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
@@ -196,13 +201,13 @@ class AppDrawer extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                        color: _ModernTheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
                       ),
                       child: Icon(
                         Icons.category_rounded,
                         size: AppConstants.iconSizeSmall,
-                        color: theme.colorScheme.secondary,
+                        color: _ModernTheme.primary,
                       ),
                     ),
                     const SizedBox(width: AppConstants.paddingSmall + 4),
@@ -211,7 +216,7 @@ class AppDrawer extends StatelessWidget {
                       style: TextStyle(
                         fontSize: AppConstants.iconSizeSmall,
                         fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
+                        color: _ModernTheme.textPrimary,
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -295,7 +300,7 @@ class AppDrawer extends StatelessWidget {
     String? subtitle,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     
     return Container(
       margin: const EdgeInsets.symmetric(
@@ -308,8 +313,8 @@ class AppDrawer extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
-          splashColor: theme.colorScheme.secondary.withValues(alpha: 0.1),
-          highlightColor: theme.colorScheme.secondary.withValues(alpha: 0.05),
+          splashColor: _ModernTheme.primary.withValues(alpha: 0.1),
+          highlightColor: _ModernTheme.primary.withValues(alpha: 0.05),
           child: Container(
             padding: const EdgeInsets.symmetric(
               horizontal: AppConstants.paddingMedium,
@@ -321,12 +326,12 @@ class AppDrawer extends StatelessWidget {
                   width: AppConstants.drawerIconContainerSize,
                   height: AppConstants.drawerIconContainerSize,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                    color: _ModernTheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                   ),
                   child: Icon(
                     icon,
-                    color: theme.colorScheme.secondary,
+                    color: _ModernTheme.primary,
                     size: AppConstants.drawerIconSize,
                   ),
                 ),
@@ -341,7 +346,7 @@ class AppDrawer extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface,
+                          color: _ModernTheme.textPrimary,
                           letterSpacing: 0.2,
                         ),
                       ),
@@ -352,7 +357,7 @@ class AppDrawer extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
-                            color: theme.colorScheme.onSurfaceVariant,
+                            color: _ModernTheme.textSecondary,
                             letterSpacing: 0.1,
                           ),
                         ),
@@ -362,7 +367,7 @@ class AppDrawer extends StatelessWidget {
                 ),
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: _ModernTheme.textSecondary,
                   size: AppConstants.iconSizeSmall + 2,
                 ),
               ],
@@ -380,7 +385,7 @@ class _ModernLoadingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
@@ -391,7 +396,7 @@ class _ModernLoadingWidget extends StatelessWidget {
             height: 48,
             margin: const EdgeInsets.symmetric(vertical: 4),
             decoration: BoxDecoration(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
+              color: _ModernTheme.textSecondary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             ),
             child: Row(
@@ -401,7 +406,7 @@ class _ModernLoadingWidget extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                    color: _ModernTheme.textSecondary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
                   ),
                 ),
@@ -415,7 +420,7 @@ class _ModernLoadingWidget extends StatelessWidget {
                         height: 12,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.2),
+                          color: _ModernTheme.textSecondary.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
@@ -424,7 +429,7 @@ class _ModernLoadingWidget extends StatelessWidget {
                         height: 8,
                         width: 80,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.15),
+                          color: _ModernTheme.textSecondary.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -453,7 +458,7 @@ class _ModernCategoriesListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
@@ -469,7 +474,7 @@ class _ModernCategoriesListWidget extends StatelessWidget {
                   child: InkWell(
                     onTap: () => onCategoryTap(category),
                     borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-                    splashColor: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                    splashColor: _ModernTheme.primary.withValues(alpha: 0.1),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppConstants.paddingMedium,
@@ -481,13 +486,13 @@ class _ModernCategoriesListWidget extends StatelessWidget {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                              color: _ModernTheme.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(AppConstants.borderRadiusSmall),
                             ),
                             child: Icon(
                               Icons.label_outline_rounded,
                               size: AppConstants.iconSizeSmall,
-                              color: theme.colorScheme.primary,
+                              color: _ModernTheme.primary,
                             ),
                           ),
                           const SizedBox(width: AppConstants.paddingMedium),
@@ -497,7 +502,7 @@ class _ModernCategoriesListWidget extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: theme.colorScheme.onSurface,
+                                color: _ModernTheme.textPrimary,
                               ),
                             ),
                           ),
@@ -507,7 +512,7 @@ class _ModernCategoriesListWidget extends StatelessWidget {
                               vertical: AppConstants.paddingSmall,
                             ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                              color: _ModernTheme.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                             ),
                             child: Text(
@@ -515,7 +520,7 @@ class _ModernCategoriesListWidget extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.secondary,
+                                color: _ModernTheme.primary,
                               ),
                             ),
                           ),
@@ -566,7 +571,7 @@ class _ModernErrorWidget extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+              color: _ModernTheme.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
@@ -574,13 +579,13 @@ class _ModernErrorWidget extends StatelessWidget {
             'Please check your connection and try again',
             style: TextStyle(
               fontSize: 12,
-              color: theme.colorScheme.onSurfaceVariant,
+              color: _ModernTheme.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppConstants.paddingMedium),
           Material(
-            color: theme.colorScheme.primary,
+            color: _ModernTheme.primary,
             borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
             child: InkWell(
               onTap: onRetry,
@@ -616,14 +621,14 @@ class MiniDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
       width: isExpanded ? AppConstants.drawerWidth : AppConstants.miniDrawerWidth,
       child: Drawer(
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: _ModernTheme.surface,
         child: Column(
           children: [
             _buildModernMiniHeader(context),
@@ -680,7 +685,7 @@ class MiniDrawer extends StatelessWidget {
 
   /// Modern mini header with logo and clean design
   Widget _buildModernMiniHeader(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     
     return Container(
       height: AppConstants.miniDrawerHeaderHeight,
@@ -689,7 +694,7 @@ class MiniDrawer extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+          colors: [_ModernTheme.primary, _ModernTheme.primary.withValues(alpha: 0.8)],
         ),
       ),
       child: Column(
@@ -766,7 +771,7 @@ class MiniDrawer extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
   }) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
@@ -775,8 +780,8 @@ class MiniDrawer extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-          splashColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-          highlightColor: theme.colorScheme.primary.withValues(alpha: 0.05),
+          splashColor: _ModernTheme.primary.withValues(alpha: 0.1),
+          highlightColor: _ModernTheme.primary.withValues(alpha: 0.05),
           child: Container(
             padding: const EdgeInsets.symmetric(
               vertical: AppConstants.paddingMedium,
@@ -789,13 +794,13 @@ class MiniDrawer extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    color: _ModernTheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
                   ),
                   child: Icon(
                     icon,
                     size: AppConstants.iconSizeSmall,
-                    color: theme.colorScheme.primary,
+                    color: _ModernTheme.primary,
                   ),
                 ),
                 if (isExpanded) ...[
@@ -805,7 +810,7 @@ class MiniDrawer extends StatelessWidget {
                     style: TextStyle(
                        fontSize: 11,
                        fontWeight: FontWeight.w500,
-                       color: theme.colorScheme.onSurface,
+                       color: _ModernTheme.textPrimary,
                      ),
                     textAlign: TextAlign.center,
                     maxLines: 1,

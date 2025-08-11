@@ -2,80 +2,41 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
-import '../core/constants.dart';
-import '../widgets/custom_app_bar.dart';
-import '../widgets/app_drawer.dart';
-import '../widgets/post_card.dart';
-import '../providers/posts_cubit.dart';
-import '../providers/categories_cubit.dart';
-import '../routes/app_router.dart';
 import 'dart:async';
 
-// --- Ultra Clean Modern Theme ---
-class _CleanTheme {
-  // Pure Minimal Color Palette
-  static const Color primary = Color(0xFF6366F1); // Clean Indigo
-  static const Color primarySoft = Color(0xFFEEF2FF);
-  static const Color secondary = Color(0xFF10B981);
-  static const Color secondarySoft = Color(0xFFF0FDF4);
-  static const Color accent = Color(0xFFF59E0B);
-  static const Color accentSoft = Color(0xFFFEF3C7);
+import '../widgets/app_drawer.dart';
+import '../providers/posts_cubit.dart';
+import '../providers/categories_cubit.dart';
+import '../models/post_model.dart';
+import '../models/category_model.dart';
+import '../routes/app_router.dart';
+
+// --- New Modern UI Theme based on the demo image ---
+class _AppTheme {
+  static const Color scaffoldBg = Color(0xFFF6F8FD);
+  static const Color surface = Colors.white;
   
-  // Clean Text Colors
-  static const Color textPrimary = Color(0xFF1F2937);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textTertiary = Color(0xFF9CA3AF);
+  static const Color textPrimary = Color(0xFF1B1D28);
+  static const Color textSecondary = Color(0xFF7D7F8B);
   
-  // Pure Surface Colors
-  static const Color background = Color(0xFFFAFAFA);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color border = Color(0xFFF3F4F6);
+  static const Color primary = Color(0xFF4C6FFF); // Blue for category pills
   
-  // Status Colors (Soft)
-  static const Color error = Color(0xFFEF4444);
-  static const Color errorSoft = Color(0xFFFEF2F2);
-  
-  // Shimmer (Ultra Subtle)
-  static const Color shimmerBase = Color(0xFFF9FAFB);
-  static const Color shimmerHighlight = Color(0xFFFFFFFF);
-  
-  // Typography (Clean Scale)
-  static const double fontSizeXS = 10.0;
-  static const double fontSizeS = 12.0;
-  static const double fontSizeM = 14.0;
-  static const double fontSizeXL = 18.0;
-  static const double fontSizeXXL = 20.0;
-  static const double fontSizeTitle = 24.0;
-  
-  // Perfect Spacing System
-  static const double spaceXXS = 2.0;
-  static const double spaceXS = 4.0;
+  static const Color shimmerBase = Color(0xFFF0F2F5);
+  static const Color shimmerHighlight = Colors.white;
+
   static const double spaceS = 8.0;
-  static const double spaceM = 12.0;
-  static const double spaceL = 16.0;
-  static const double spaceXL = 20.0;
-  static const double spaceXXL = 24.0;
-  static const double spaceXXXL = 32.0;
-  
-  // Pure Rounded System
-  static const double radiusXS = 6.0;
-  static const double radiusM = 16.0;
+  static const double spaceM = 16.0;
+  static const double spaceL = 24.0;
+
+  static const double radiusM = 12.0;
   static const double radiusL = 20.0;
-  static const double radiusXL = 24.0;
-  static const double radiusXXL = 28.0;
-  static const double radiusFull = 50.0;
-  
-  // Icon Sizes (Compact)
-  static const double iconXS = 12.0;
-  static const double iconS = 16.0;
-  static const double iconM = 20.0;
-  static const double iconXL = 32.0;
 }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
-  
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -84,26 +45,24 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   late final ScrollController _scrollController;
   Timer? _scrollDebounceTimer;
   bool _isLoadingMore = false;
-  
+
   @override
   bool get wantKeepAlive => true;
-  
+
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<PostsCubit>().loadPostsLazy();
-        Timer(const Duration(milliseconds: 600), () {
-          if (mounted) context.read<CategoriesCubit>().loadCategoriesIfNeeded();
-        });
+        context.read<CategoriesCubit>().loadCategoriesIfNeeded();
       }
     });
   }
-  
+
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
@@ -111,28 +70,28 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     _scrollDebounceTimer?.cancel();
     super.dispose();
   }
-  
+
   void _onScroll() {
     if (_isLoadingMore) return;
     _scrollDebounceTimer?.cancel();
-    _scrollDebounceTimer = Timer(const Duration(milliseconds: 120), _handlePagination);
+    _scrollDebounceTimer = Timer(const Duration(milliseconds: 150), _handlePagination);
   }
-  
+
   void _handlePagination() {
     if (!mounted || _isLoadingMore) return;
-    
     final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - 250) {
-      final postsState = context.read<PostsCubit>().state;
-      postsState.whenOrNull(
-        loaded: (posts, hasMore, currentPage, categoryId, searchQuery) {
-          if (hasMore && !_isLoadingMore) {
+    if (position.pixels >= position.maxScrollExtent - 400) {
+      final state = context.read<PostsCubit>().state;
+      state.maybeWhen(
+        loaded: (posts, hasReachedMax, currentPage, categoryId, searchQuery) {
+          if (!hasReachedMax) {
             setState(() => _isLoadingMore = true);
             context.read<PostsCubit>().loadMorePosts().whenComplete(() {
               if (mounted) setState(() => _isLoadingMore = false);
             });
           }
         },
+        orElse: () {},
       );
     }
   }
@@ -143,31 +102,28 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
       context.read<CategoriesCubit>().refreshCategories(),
     ]);
   }
-  
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
     return Scaffold(
-      backgroundColor: _CleanTheme.background,
-      appBar: CustomAppBar(
-        title: AppConstants.appName,
-        onSearchPressed: () => AppNavigation.goToSearch(context),
-      ),
+      backgroundColor: _AppTheme.scaffoldBg,
+      // The AppBar is now part of the CustomScrollView for a more integrated feel
       drawer: const AppDrawer(),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        color: _CleanTheme.primary,
-        backgroundColor: _CleanTheme.surface,
+        color: _AppTheme.primary,
         child: CustomScrollView(
           controller: _scrollController,
-          physics: const BouncingScrollPhysics(),
-          slivers: const [
-            SliverToBoxAdapter(child: SizedBox(height: _CleanTheme.spaceL)),
-            _CleanCategoriesSection(),
-            SliverToBoxAdapter(child: SizedBox(height: _CleanTheme.spaceXL)),
-            _CleanPostsSection(),
-            SliverToBoxAdapter(child: SizedBox(height: _CleanTheme.spaceXXXL)),
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          slivers: [
+            const _ModernAppBar(),
+            const SliverToBoxAdapter(child: SizedBox(height: _AppTheme.spaceL)),
+            const _HottestNewsSection(),
+            const SliverToBoxAdapter(child: SizedBox(height: _AppTheme.spaceL)),
+            const _ExploreSection(),
+            const SliverToBoxAdapter(child: SizedBox(height: _AppTheme.spaceL)),
+            _ForYouSection(isLoadingMore: _isLoadingMore),
           ],
         ),
       ),
@@ -175,74 +131,292 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   }
 }
 
-// --- Ultra Clean Categories Section ---
-class _CleanCategoriesSection extends StatelessWidget {
-  const _CleanCategoriesSection();
-  
+// --- New Screen Sections ---
+
+class _ModernAppBar extends StatelessWidget {
+  const _ModernAppBar();
+
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: BlocBuilder<CategoriesCubit, CategoriesState>(
-        builder: (context, state) {
-          return state.when(
-            initial: () => _CleanCategoriesPlaceholder(
-              onTap: () => context.read<CategoriesCubit>().loadCategoriesIfNeeded(),
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(_AppTheme.spaceM, _AppTheme.spaceL, _AppTheme.spaceM, 0),
+      sliver: SliverToBoxAdapter(
+        child: Row(
+          children: [
+            _AppBarButton(
+              icon: Icons.menu,
+              onPressed: () => Scaffold.of(context).openDrawer(),
             ),
-            loading: () => const _CleanCategoriesLoading(),
-            loaded: (categories) => categories.isEmpty 
-                ? const SizedBox.shrink() 
-                : _CleanCategoriesList(categories: categories),
-            error: (message) => _CleanCategoriesError(
-              message: message,
-              onRetry: () => context.read<CategoriesCubit>().loadCategories(),
+            const Spacer(),
+            _AppBarButton(icon: Icons.notifications_none, onPressed: () {}),
+            const SizedBox(width: _AppTheme.spaceS),
+            _AppBarButton(icon: Icons.search, onPressed: () => AppNavigation.goToSearch(context)),
+            const SizedBox(width: _AppTheme.spaceM),
+            const CircleAvatar(
+              radius: 20,
+              backgroundImage: AssetImage('assets/logo.png'), // Local asset
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
 }
 
-class _CleanCategoriesList extends StatelessWidget {
-  final List categories;
-  const _CleanCategoriesList({required this.categories});
+class _AppBarButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+  const _AppBarButton({required this.icon, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: _AppTheme.surface,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: _AppTheme.textPrimary, size: 20),
+        onPressed: onPressed,
+        splashRadius: 20,
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback? onSeeMore;
+  const _SectionHeader({required this.title, this.onSeeMore});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _CleanTheme.spaceL),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: _AppTheme.spaceM, vertical: _AppTheme.spaceS),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _CleanSectionTitle(
-            title: 'বিভাগসমূহ',
-            subtitle: '${categories.length}টি বিভাগ',
-            icon: Icons.apps_rounded,
+          Text(
+            title,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _AppTheme.textPrimary),
           ),
-          const SizedBox(height: _CleanTheme.spaceM),
-          SizedBox(
-            height: 100,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                return Padding(
-                  padding: EdgeInsets.only(
-                    right: index == categories.length - 1 ? 0 : _CleanTheme.spaceM,
-                  ),
-                  child: _CleanCategoryCard(
-                    label: category.name,
-                    count: category.count,
-                    index: index,
-                    onTap: () => AppNavigation.goToCategory(
-                      context, 
-                      category.id, 
-                      category.name,
+          if (onSeeMore != null)
+            TextButton(
+              onPressed: onSeeMore,
+              child: const Text('See More', style: TextStyle(color: _AppTheme.textSecondary, fontWeight: FontWeight.w500)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HottestNewsSection extends StatelessWidget {
+  const _HottestNewsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<PostsCubit, PostsState>(
+      builder: (context, state) {
+        return state.when(
+          initial: () => const _HottestNewsSkeleton(),
+          loading: () => const _HottestNewsSkeleton(),
+          loaded: (posts, hasReachedMax, currentPage, categoryId, searchQuery) {
+            if (posts.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+            final hottestPosts = posts.take(5).toList();
+            return SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionHeader(title: 'Hottest News', onSeeMore: () {}),
+                  SizedBox(
+                    height: 280,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: hottestPosts.length,
+                      padding: const EdgeInsets.symmetric(horizontal: _AppTheme.spaceM),
+                      itemBuilder: (context, index) {
+                        return _HottestNewsCard(post: hottestPosts[index]);
+                      },
                     ),
                   ),
-                );
-              },
+                ],
+              ),
+            );
+          },
+          error: (message) => SliverToBoxAdapter(child: Center(child: Text(message))),
+        );
+      },
+    );
+  }
+}
+
+class _HottestNewsCard extends StatelessWidget {
+  final PostModel post;
+  const _HottestNewsCard({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    final categoryName = post.getCategoryNames().firstOrNull ?? 'General';
+
+    return Container(
+      width: 250,
+      margin: const EdgeInsets.only(right: _AppTheme.spaceM),
+      decoration: BoxDecoration(
+        color: _AppTheme.surface,
+        borderRadius: BorderRadius.circular(_AppTheme.radiusL),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15)],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () => AppNavigation.goToPost(context, post.id),
+          borderRadius: BorderRadius.circular(_AppTheme.radiusL),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(_AppTheme.radiusL),
+                      topRight: Radius.circular(_AppTheme.radiusL),
+                    ),
+                    child: CachedNetworkImage(
+                      imageUrl: post.featuredImageUrl ?? 'https://via.placeholder.com/250x150',
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    top: _AppTheme.spaceM,
+                    left: _AppTheme.spaceM,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: _AppTheme.primary,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        categoryName,
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(_AppTheme.spaceM),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '🔥 Trending No.1 • ${post.getFormattedDate()}',
+                      style: const TextStyle(color: _AppTheme.textSecondary, fontSize: 12),
+                    ),
+                    const SizedBox(height: _AppTheme.spaceS),
+                    Text(
+                      post.title.rendered,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: _AppTheme.textPrimary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: _AppTheme.spaceS),
+                    // Removed author details as per request
+                    // Row(
+                    //   children: [
+                    //     const CircleAvatar(radius: 12, backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=3')),
+                    //     const SizedBox(width: _AppTheme.spaceS),
+                    //     Text(post.getAuthorName(), style: const TextStyle(color: _AppTheme.textSecondary)),
+                    //     const Spacer(),
+                    //     const Icon(Icons.more_horiz, color: _AppTheme.textSecondary),
+                    //   ],
+                    // ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExploreSection extends StatelessWidget {
+  const _ExploreSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CategoriesCubit, CategoriesState>(
+      builder: (context, state) {
+        return state.when(
+          initial: () => const _ExploreSkeleton(),
+          loading: () => const _ExploreSkeleton(),
+          loaded: (categories) {
+            if (categories.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+            return SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SectionHeader(title: 'Explore', onSeeMore: () => AppNavigation.goToAllCategories(context)),
+                  SizedBox(
+                    height: 90,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: _AppTheme.spaceM),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        return _ExploreCategoryCircle(category: categories[index]);
+                      },
+                    ),
+                  )
+                ],
+              ),
+            );
+          },
+          error: (_) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+        );
+      },
+    );
+  }
+}
+
+class _ExploreCategoryCircle extends StatelessWidget {
+  final CategoryModel category;
+  const _ExploreCategoryCircle({required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: _AppTheme.spaceM),
+      child: Column(
+        children: [
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.grey.shade200),
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: () => AppNavigation.goToCategory(context, category.id, category.name),
+                borderRadius: BorderRadius.circular(35),
+                child: Center(
+                  child: Text(
+                    category.name,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: _AppTheme.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -251,512 +425,158 @@ class _CleanCategoriesList extends StatelessWidget {
   }
 }
 
-class _CleanCategoryCard extends StatelessWidget {
-  final String label;
-  final int count;
-  final int index;
-  final VoidCallback onTap;
-  
-  const _CleanCategoryCard({
-    required this.label,
-    required this.count,
-    required this.index,
-    required this.onTap,
-  });
+class _ForYouSection extends StatelessWidget {
+  final bool isLoadingMore;
+  const _ForYouSection({required this.isLoadingMore});
 
-  Color get _categoryColor {
-    final colors = [
-      _CleanTheme.primary,
-      _CleanTheme.secondary,
-      _CleanTheme.accent,
-      const Color(0xFFEC4899),
-      const Color(0xFF8B5CF6),
-      const Color(0xFF06B6D4),
-    ];
-    return colors[index % colors.length];
-  }
-
-  Color get _categorySoftColor {
-    final colors = [
-      _CleanTheme.primarySoft,
-      _CleanTheme.secondarySoft,
-      _CleanTheme.accentSoft,
-      const Color(0xFFFDF2F8),
-      const Color(0xFFF5F3FF),
-      const Color(0xFFECFEFF),
-    ];
-    return colors[index % colors.length];
-  }
-
-  IconData get _categoryIcon {
-    final icons = [
-      Icons.article_rounded,
-      Icons.trending_up_rounded,
-      Icons.sports_soccer_rounded,
-      Icons.business_center_rounded,
-      Icons.science_rounded,
-      Icons.language_rounded,
-    ];
-    return icons[index % icons.length];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(_CleanTheme.radiusL),
-        child: Container(
-          width: 90,
-          decoration: BoxDecoration(
-            color: _categorySoftColor,
-            borderRadius: BorderRadius.circular(_CleanTheme.radiusL),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: _CleanTheme.iconXL,
-                height: _CleanTheme.iconXL,
-                decoration: BoxDecoration(
-                  color: _categoryColor,
-                  borderRadius: BorderRadius.circular(_CleanTheme.radiusM),
-                ),
-                child: Icon(
-                  _categoryIcon,
-                  color: Colors.white,
-                  size: _CleanTheme.iconS,
-                ),
-              ),
-              const SizedBox(height: _CleanTheme.spaceS),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: _CleanTheme.fontSizeXS,
-                  fontWeight: FontWeight.w600,
-                  color: _CleanTheme.textPrimary,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: _CleanTheme.spaceXXS),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: _CleanTheme.spaceS,
-                  vertical: _CleanTheme.spaceXXS,
-                ),
-                decoration: BoxDecoration(
-                  color: _categoryColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(_CleanTheme.radiusFull),
-                ),
-                child: Text(
-                  count.toString(),
-                  style: TextStyle(
-                    fontSize: _CleanTheme.fontSizeXS,
-                    fontWeight: FontWeight.bold,
-                    color: _categoryColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// --- Ultra Clean Posts Section ---
-class _CleanPostsSection extends StatelessWidget {
-  const _CleanPostsSection();
-  
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PostsCubit, PostsState>(
       builder: (context, state) {
         return state.when(
-          initial: () => const _CleanPostsLoading(),
-          loading: () => const _CleanPostsLoading(),
-          loaded: (posts, hasMore, _, _, _) {
-            if (posts.isEmpty) return const _CleanEmptyPosts();
-            
-            return SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: _CleanTheme.spaceL),
-                child: Column(
-                  children: [
-                    _CleanSectionTitle(
-                      title: 'সর্বশেষ সংবাদ',
-                      subtitle: '${posts.length}টি পোস্ট',
-                      icon: Icons.feed_rounded,
-                    ),
-                    const SizedBox(height: _CleanTheme.spaceM),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: _CleanTheme.surface,
-                        borderRadius: BorderRadius.circular(_CleanTheme.radiusXL),
-                      ),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: posts.length + (hasMore ? 1 : 0),
-                        separatorBuilder: (context, index) => Container(
-                          height: 1,
-                          margin: const EdgeInsets.symmetric(horizontal: _CleanTheme.spaceL),
-                          color: _CleanTheme.border,
-                        ),
-                        itemBuilder: (context, index) {
-                          if (index < posts.length) {
-                            return PostCard(
-                              post: posts[index],
-                              onTap: () => AppNavigation.goToPost(context, posts[index].id),
-                            );
-                          } else {
-                            return const _CleanLoadMoreIndicator();
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          initial: () => const _ForYouSkeleton(),
+          loading: () => const _ForYouSkeleton(),
+          loaded: (posts, hasReachedMax, currentPage, categoryId, searchQuery) {
+            if (posts.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+            return SliverList.builder(
+              itemCount: posts.length + (isLoadingMore ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index < posts.length) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(_AppTheme.spaceM, 0, _AppTheme.spaceM, _AppTheme.spaceM),
+                    child: _ForYouPostCard(post: posts[index]),
+                  );
+                } else {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32.0),
+                    child: Center(child: CircularProgressIndicator(color: _AppTheme.primary)),
+                  );
+                }
+              },
             );
           },
-          error: (message) => _CleanPostsError(
-            message: message,
-            onRetry: () => context.read<PostsCubit>().loadPosts(),
-          ),
+          error: (message) => SliverToBoxAdapter(child: Center(child: Text(message))),
         );
       },
     );
   }
 }
 
-// --- Clean Helper Widgets ---
-class _CleanSectionTitle extends StatelessWidget {
-  final String title;
-  final String? subtitle;
-  final IconData icon;
-  
-  const _CleanSectionTitle({
-    required this.title,
-    this.subtitle,
-    required this.icon,
-  });
+class _ForYouPostCard extends StatelessWidget {
+  final PostModel post;
+  const _ForYouPostCard({required this.post});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: _CleanTheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(_CleanTheme.radiusM),
-          ),
-          child: Icon(
-            icon,
-            color: _CleanTheme.primary,
-            size: _CleanTheme.iconM,
-          ),
-        ),
-        const SizedBox(width: _CleanTheme.spaceM),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final categoryName = post.getCategoryNames().firstOrNull ?? 'General';
+    return Container(
+      padding: const EdgeInsets.all(_AppTheme.spaceS),
+      decoration: BoxDecoration(
+        color: _AppTheme.surface,
+        borderRadius: BorderRadius.circular(_AppTheme.radiusM),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () => AppNavigation.goToPost(context, post.id),
+          borderRadius: BorderRadius.circular(_AppTheme.radiusM),
+          child: Row(
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: _CleanTheme.fontSizeXL,
-                  fontWeight: FontWeight.bold,
-                  color: _CleanTheme.textPrimary,
-                ),
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: _CleanTheme.spaceXXS),
-                Text(
-                  subtitle!,
-                  style: const TextStyle(
-                    fontSize: _CleanTheme.fontSizeS,
-                    color: _CleanTheme.textTertiary,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// --- Loading States ---
-class _CleanCategoriesLoading extends StatelessWidget {
-  const _CleanCategoriesLoading();
-  
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _CleanTheme.spaceL),
-      child: Shimmer.fromColors(
-        baseColor: _CleanTheme.shimmerBase,
-        highlightColor: _CleanTheme.shimmerHighlight,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: _CleanTheme.surface,
-                    borderRadius: BorderRadius.circular(_CleanTheme.radiusM),
-                  ),
-                ),
-                const SizedBox(width: _CleanTheme.spaceM),
-                Column(
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 120,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        color: _CleanTheme.surface,
-                        borderRadius: BorderRadius.circular(_CleanTheme.radiusXS),
-                      ),
+                    Text(
+                      '$categoryName • ${post.getFormattedDate()}',
+                      style: const TextStyle(color: _AppTheme.textSecondary, fontSize: 12),
                     ),
-                    const SizedBox(height: _CleanTheme.spaceXS),
-                    Container(
-                      width: 80,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: _CleanTheme.surface,
-                        borderRadius: BorderRadius.circular(_CleanTheme.radiusXS),
+                    const SizedBox(height: _AppTheme.spaceS),
+                    Text(
+                      post.title.rendered,
+                      style: const TextStyle(
+                        color: _AppTheme.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: _AppTheme.spaceS),
+                    Text(
+                      post.excerpt.rendered.replaceAll(RegExp(r'<[^>]*>'), ''), // Remove HTML tags
+                      style: const TextStyle(color: _AppTheme.textSecondary, fontSize: 13),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: _AppTheme.spaceS),
+                    // Removed author details as per request
+                    // Row(
+                    //   children: [
+                    //     const CircleAvatar(radius: 10, backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=5')),
+                    //     const SizedBox(width: _AppTheme.spaceS),
+                    //     Expanded(
+                    //       child: Text(
+                    //         post.getAuthorName(),
+                    //         style: const TextStyle(color: _AppTheme.textSecondary, fontSize: 13),
+                    //         overflow: TextOverflow.ellipsis,
+                    //       ),
+                    //     ),
+                    //     const Icon(Icons.more_horiz, color: _AppTheme.textSecondary),
+                    //   ],
+                    // ),
                   ],
                 ),
-              ],
-            ),
-            const SizedBox(height: _CleanTheme.spaceM),
-            SizedBox(
-              height: 100,
-              child: Row(
-                children: List.generate(
-                  4,
-                  (index) => Container(
-                    width: 90,
-                    margin: EdgeInsets.only(
-                      right: index == 3 ? 0 : _CleanTheme.spaceM,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _CleanTheme.surface,
-                      borderRadius: BorderRadius.circular(_CleanTheme.radiusL),
-                    ),
-                  ),
+              ),
+              const SizedBox(width: _AppTheme.spaceM),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(_AppTheme.radiusM),
+                child: CachedNetworkImage(
+                  imageUrl: post.featuredImageUrl ?? 'https://via.placeholder.com/100x100',
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.cover,
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _CleanPostsLoading extends StatelessWidget {
-  const _CleanPostsLoading();
-  
+
+// --- Skeleton Loaders ---
+
+class _HottestNewsSkeleton extends StatelessWidget {
+  const _HottestNewsSkeleton();
+
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: _CleanTheme.spaceL),
-        child: Shimmer.fromColors(
-          baseColor: _CleanTheme.shimmerBase,
-          highlightColor: _CleanTheme.shimmerHighlight,
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: _CleanTheme.surface,
-                      borderRadius: BorderRadius.circular(_CleanTheme.radiusM),
-                    ),
-                  ),
-                  const SizedBox(width: _CleanTheme.spaceM),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 120,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: _CleanTheme.surface,
-                          borderRadius: BorderRadius.circular(_CleanTheme.radiusXS),
-                        ),
-                      ),
-                      const SizedBox(height: _CleanTheme.spaceXS),
-                      Container(
-                        width: 80,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: _CleanTheme.surface,
-                          borderRadius: BorderRadius.circular(_CleanTheme.radiusXS),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: _CleanTheme.spaceM),
-              Container(
-                decoration: BoxDecoration(
-                  color: _CleanTheme.surface,
-                  borderRadius: BorderRadius.circular(_CleanTheme.radiusXL),
-                ),
-                child: Column(
-                  children: List.generate(
-                    3,
-                    (index) => Container(
-                      height: 100,
-                      margin: const EdgeInsets.all(_CleanTheme.spaceL),
-                      decoration: BoxDecoration(
-                        color: _CleanTheme.shimmerBase,
-                        borderRadius: BorderRadius.circular(_CleanTheme.radiusM),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// --- Error & Empty States ---
-class _CleanCategoriesPlaceholder extends StatelessWidget {
-  final VoidCallback onTap;
-  const _CleanCategoriesPlaceholder({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _CleanTheme.spaceL),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(_CleanTheme.radiusXL),
-          child: Container(
-            padding: const EdgeInsets.all(_CleanTheme.spaceL),
-            decoration: BoxDecoration(
-              color: _CleanTheme.surface,
-              borderRadius: BorderRadius.circular(_CleanTheme.radiusXL),
-            ),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.apps_rounded,
-                  color: _CleanTheme.textSecondary,
-                  size: _CleanTheme.iconM,
-                ),
-                SizedBox(width: _CleanTheme.spaceM),
-                Expanded(
-                  child: Text(
-                    'বিভাগসমূহ দেখুন',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: _CleanTheme.textSecondary,
-                      fontSize: _CleanTheme.fontSizeM,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: _CleanTheme.iconXS,
-                  color: _CleanTheme.textTertiary,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CleanCategoriesError extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  
-  const _CleanCategoriesError({
-    required this.message,
-    required this.onRetry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _CleanTheme.spaceL),
-      child: Container(
-        padding: const EdgeInsets.all(_CleanTheme.spaceL),
-        decoration: BoxDecoration(
-          color: _CleanTheme.errorSoft,
-          borderRadius: BorderRadius.circular(_CleanTheme.radiusXL),
-        ),
-        child: Row(
+      child: Shimmer.fromColors(
+        baseColor: _AppTheme.shimmerBase,
+        highlightColor: _AppTheme.shimmerHighlight,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: _CleanTheme.error.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(_CleanTheme.radiusM),
-              ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                color: _CleanTheme.error,
-                size: _CleanTheme.iconM,
-              ),
-            ),
-            const SizedBox(width: _CleanTheme.spaceM),
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  color: _CleanTheme.error,
-                  fontWeight: FontWeight.w500,
-                  fontSize: _CleanTheme.fontSizeM,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: onRetry,
-              style: TextButton.styleFrom(
-                backgroundColor: _CleanTheme.error.withOpacity(0.1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(_CleanTheme.radiusM),
-                ),
-              ),
-              child: const Text(
-                'পুনরায় চেষ্টা',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: _CleanTheme.fontSizeS,
-                  color: _CleanTheme.error,
-                ),
+            const _SectionHeader(title: 'Hottest News'),
+            SizedBox(
+              height: 280,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: 3,
+                padding: const EdgeInsets.symmetric(horizontal: _AppTheme.spaceM),
+                itemBuilder: (context, index) {
+                  return Container(
+                    width: 250,
+                    margin: const EdgeInsets.only(right: _AppTheme.spaceM),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(_AppTheme.radiusL),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -766,192 +586,92 @@ class _CleanCategoriesError extends StatelessWidget {
   }
 }
 
-class _CleanEmptyPosts extends StatelessWidget {
-  const _CleanEmptyPosts();
-  
+class _ExploreSkeleton extends StatelessWidget {
+  const _ExploreSkeleton();
+
   @override
   Widget build(BuildContext context) {
-    return SliverFillRemaining(
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.all(_CleanTheme.spaceXXL),
-          padding: const EdgeInsets.all(_CleanTheme.spaceXXXL),
-          decoration: BoxDecoration(
-            color: _CleanTheme.surface,
-            borderRadius: BorderRadius.circular(_CleanTheme.radiusXXL),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: _CleanTheme.primarySoft,
-                  borderRadius: BorderRadius.circular(_CleanTheme.radiusXXL),
-                ),
-                child: const Icon(
-                  Icons.article_outlined,
-                  size: 40,
-                  color: _CleanTheme.primary,
-                ),
+    return SliverToBoxAdapter(
+      child: Shimmer.fromColors(
+        baseColor: _AppTheme.shimmerBase,
+        highlightColor: _AppTheme.shimmerHighlight,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionHeader(title: 'Explore'),
+            SizedBox(
+              height: 90,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: 5,
+                padding: const EdgeInsets.symmetric(horizontal: _AppTheme.spaceM),
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: _AppTheme.spaceM),
+                    child: Container(
+                      width: 70,
+                      height: 70,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  );
+                },
               ),
-              const SizedBox(height: _CleanTheme.spaceXL),
-              const Text(
-                'কোনো পোস্ট পাওয়া যায়নি',
-                style: TextStyle(
-                  fontSize: _CleanTheme.fontSizeXXL,
-                  fontWeight: FontWeight.bold,
-                  color: _CleanTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: _CleanTheme.spaceS),
-              const Text(
-                'নতুন পোস্ট দেখতে রিফ্রেশ করুন',
-                style: TextStyle(
-                  fontSize: _CleanTheme.fontSizeM,
-                  color: _CleanTheme.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: _CleanTheme.spaceXXL),
-              ElevatedButton(
-                onPressed: () => context.read<PostsCubit>().loadPosts(refresh: true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _CleanTheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: _CleanTheme.spaceXXL,
-                    vertical: _CleanTheme.spaceL,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(_CleanTheme.radiusFull),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'রিফ্রেশ করুন',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: _CleanTheme.fontSizeM,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            )
+          ],
         ),
       ),
     );
   }
 }
 
-class _CleanPostsError extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  
-  const _CleanPostsError({
-    required this.message,
-    required this.onRetry,
-  });
-  
-  @override
-  Widget build(BuildContext context) {
-    return SliverFillRemaining(
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.all(_CleanTheme.spaceXXL),
-          padding: const EdgeInsets.all(_CleanTheme.spaceXXXL),
-          decoration: BoxDecoration(
-            color: _CleanTheme.surface,
-            borderRadius: BorderRadius.circular(_CleanTheme.radiusXXL),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: _CleanTheme.errorSoft,
-                  borderRadius: BorderRadius.circular(_CleanTheme.radiusXXL),
-                ),
-                child: const Icon(
-                  Icons.cloud_off_rounded,
-                  size: 40,
-                  color: _CleanTheme.error,
-                ),
-              ),
-              const SizedBox(height: _CleanTheme.spaceXL),
-              const Text(
-                'কিছু সমস্যা হয়েছে',
-                style: TextStyle(
-                  fontSize: _CleanTheme.fontSizeTitle,
-                  fontWeight: FontWeight.bold,
-                  color: _CleanTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: _CleanTheme.spaceS),
-              Text(
-                message,
-                style: const TextStyle(
-                  fontSize: _CleanTheme.fontSizeM,
-                  color: _CleanTheme.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: _CleanTheme.spaceXXL),
-              ElevatedButton(
-                onPressed: onRetry,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _CleanTheme.error,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: _CleanTheme.spaceXXL,
-                    vertical: _CleanTheme.spaceL,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(_CleanTheme.radiusFull),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'পুনরায় চেষ্টা করুন',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: _CleanTheme.fontSizeM,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+class _ForYouSkeleton extends StatelessWidget {
+  const _ForYouSkeleton();
 
-class _CleanLoadMoreIndicator extends StatelessWidget {
-  const _CleanLoadMoreIndicator();
-  
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(_CleanTheme.spaceXL),
-      child: Center(
-        child: Container(
-          width: 32,
-          height: 32,
-          padding: const EdgeInsets.all(_CleanTheme.spaceS),
-          decoration: BoxDecoration(
-            color: _CleanTheme.primarySoft,
-            borderRadius: BorderRadius.circular(_CleanTheme.radiusFull),
+    return SliverList.builder(
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: _AppTheme.shimmerBase,
+          highlightColor: _AppTheme.shimmerHighlight,
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(_AppTheme.spaceM, 0, _AppTheme.spaceM, _AppTheme.spaceM),
+            padding: const EdgeInsets.all(_AppTheme.spaceS),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(_AppTheme.radiusM),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      Container(height: 12, color: Colors.white),
+                      const SizedBox(height: _AppTheme.spaceS),
+                      Container(height: 16, color: Colors.white),
+                      const SizedBox(height: _AppTheme.spaceS),
+                      Container(height: 16, width: 150, color: Colors.white),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: _AppTheme.spaceM),
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(_AppTheme.radiusM),
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: const CircularProgressIndicator(
-            strokeWidth: 2,
-            color: _CleanTheme.primary,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

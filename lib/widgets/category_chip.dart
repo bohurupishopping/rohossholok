@@ -4,6 +4,13 @@ import 'package:flutter/material.dart';
 import '../models/category_model.dart';
 import '../core/constants.dart';
 
+// Modern UI Theme matching home_screen.dart and category_screen.dart
+class _ModernTheme {
+  static const Color surface = Colors.white;
+  static const Color textSecondary = Color(0xFF7D7F8B);
+  static const Color primary = Color(0xFF4C6FFF);
+}
+
 /// Reusable category chip widget
 class CategoryChip extends StatelessWidget {
   final CategoryModel category;
@@ -43,7 +50,7 @@ class CategoryChip extends StatelessWidget {
             ),
             boxShadow: isSelected ? [
               BoxShadow(
-                color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                color: _ModernTheme.primary.withValues(alpha: 0.2),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -57,7 +64,7 @@ class CategoryChip extends StatelessWidget {
                   width: 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
+                    color: _ModernTheme.primary,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -87,8 +94,8 @@ class CategoryChip extends StatelessWidget {
     return baseStyle?.copyWith(
       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
       color: isSelected 
-          ? theme.colorScheme.primary
-          : theme.colorScheme.onSurfaceVariant,
+          ? _ModernTheme.primary
+          : _ModernTheme.textSecondary,
       fontSize: switch (size) {
         CategoryChipSize.small => 11,
         CategoryChipSize.medium => 12,
@@ -99,16 +106,16 @@ class CategoryChip extends StatelessWidget {
   
   Color _getBackgroundColor(ThemeData theme) {
     if (isSelected) {
-      return theme.colorScheme.primaryContainer.withValues(alpha: 0.9);
+      return _ModernTheme.primary.withValues(alpha: 0.1);
     }
-    return theme.colorScheme.surfaceContainerLow;
+    return _ModernTheme.surface;
   }
   
   Color _getBorderColor(ThemeData theme) {
     if (isSelected) {
-      return theme.colorScheme.primary;
+      return _ModernTheme.primary;
     }
-    return theme.colorScheme.outline.withValues(alpha: 0.3);
+    return _ModernTheme.textSecondary.withValues(alpha: 0.3);
   }
   
   double _getBorderRadius() {
@@ -213,7 +220,7 @@ class CategoryList extends StatelessWidget {
   }
   
   Widget _buildAllChip(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     final isSelected = selectedCategoryId == null;
     
     return Material(
@@ -227,18 +234,18 @@ class CategoryList extends StatelessWidget {
           padding: _getAllChipPadding(),
           decoration: BoxDecoration(
             color: isSelected 
-                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.9)
-                : theme.colorScheme.surfaceContainerLow,
+                ? _ModernTheme.primary.withValues(alpha: 0.1)
+                : _ModernTheme.surface,
             borderRadius: BorderRadius.circular(_getAllChipBorderRadius()),
             border: Border.all(
               color: isSelected
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.outline.withValues(alpha: 0.3),
+                  ? _ModernTheme.primary
+                  : _ModernTheme.textSecondary.withValues(alpha: 0.3),
               width: 1.5,
             ),
             boxShadow: isSelected ? [
               BoxShadow(
-                color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                color: _ModernTheme.primary.withValues(alpha: 0.2),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -251,7 +258,7 @@ class CategoryList extends StatelessWidget {
                 Icon(
                   Icons.apps_rounded,
                   size: 14,
-                  color: theme.colorScheme.primary,
+                  color: _ModernTheme.primary,
                 ),
                 const SizedBox(width: 6),
               ],
@@ -279,8 +286,8 @@ class CategoryList extends StatelessWidget {
     return baseStyle?.copyWith(
       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
       color: isSelected 
-          ? theme.colorScheme.primary
-          : theme.colorScheme.onSurfaceVariant,
+          ? _ModernTheme.primary
+          : _ModernTheme.textSecondary,
       fontSize: switch (chipSize) {
         CategoryChipSize.small => 11,
         CategoryChipSize.medium => 12,

@@ -1,9 +1,5 @@
 # TODO:
 
-- [x] analyze_drawer: Analyze app_drawer.dart UI design and color scheme (priority: High)
-- [x] update_theme: Update theme.dart to match modern colors from app_drawer.dart (priority: High)
-- [x] update_constants: Update constants.dart with drawer-specific constants and modern colors (priority: High)
-- [x] update_appbar: Update custom_app_bar.dart to use theme colors and remove hardcoded values (priority: High)
-- [x] update_drawer: Update app_drawer.dart to use theme colors and constants instead of hardcoded values (priority: High)
-- [ ] material3_consistency: Ensure Material 3 design consistency across all components (**IN PROGRESS**) (priority: Medium)
-- [ ] test_ui: Test the updated UI components for visual consistency (priority: Medium)
+- [x] 1: Update category_chip.dart to use modern color scheme (scaffoldBg: #F6F8FD, surface: white, textPrimary: #1B1D28, textSecondary: #7D7F8B, primary: #4C6FFF) (priority: High)
+- [x] 2: Update app_drawer.dart to use modern color scheme and ensure consistent styling with the modern theme (priority: High)
+- [ ] 3: Test the updated widgets to ensure they integrate seamlessly with the modern UI design (**IN PROGRESS**) (priority: Medium)
