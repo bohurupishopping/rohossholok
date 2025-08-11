@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../core/constants.dart';
 import '../routes/app_router.dart';
@@ -17,7 +19,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onSearchPressed;
   final bool showSearch;
   final bool showMenu;
-  
+
   const CustomAppBar({
     super.key,
     required this.title,
@@ -34,11 +36,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showSearch = true,
     this.showMenu = true,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return AppBar(
       title: Text(
         title,
@@ -57,7 +59,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: _buildActions(context),
     );
   }
-  
+
   Widget? _buildMenuButton(BuildContext context) {
     return IconButton(
       onPressed: onMenuPressed ?? () => Scaffold.of(context).openDrawer(),
@@ -65,10 +67,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       tooltip: 'মেনু',
     );
   }
-  
+
   List<Widget>? _buildActions(BuildContext context) {
     final defaultActions = <Widget>[];
-    
+
     if (showSearch && onSearchPressed != null) {
       defaultActions.add(
         IconButton(
@@ -78,21 +80,20 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       );
     }
-    
+
     if (actions != null) {
       defaultActions.addAll(actions!);
     }
-    
+
     return defaultActions.isNotEmpty ? defaultActions : null;
   }
-  
+
   @override
-  Size get preferredSize => Size.fromHeight(
-    kToolbarHeight + (bottom?.preferredSize.height ?? 0.0),
-  );
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0.0));
 }
 
-/// Search app bar for search functionality
+/// Modern search app bar with clean design and animations
 class SearchAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String? initialQuery;
   final ValueChanged<String>? onQueryChanged;
@@ -101,7 +102,7 @@ class SearchAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback? onBack;
   final String hintText;
   final bool autofocus;
-  
+
   const SearchAppBar({
     super.key,
     this.initialQuery,
@@ -112,72 +113,185 @@ class SearchAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.hintText = 'পোস্ট খুঁজুন...',
     this.autofocus = true,
   });
-  
+
   @override
   State<SearchAppBar> createState() => _SearchAppBarState();
-  
+
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-class _SearchAppBarState extends State<SearchAppBar> {
+class _SearchAppBarState extends State<SearchAppBar>
+    with SingleTickerProviderStateMixin {
   late TextEditingController _controller;
-  
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  bool _hasText = false;
+
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialQuery);
     _controller.addListener(_onTextChanged);
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
+    _hasText = widget.initialQuery?.isNotEmpty ?? false;
+    if (_hasText) {
+      _animationController.forward();
+    }
   }
-  
+
   @override
   void dispose() {
     _controller.dispose();
+    _animationController.dispose();
     super.dispose();
   }
-  
+
   void _onTextChanged() {
+    final hasText = _controller.text.isNotEmpty;
+    if (hasText != _hasText) {
+      setState(() {
+        _hasText = hasText;
+      });
+
+      if (hasText) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    }
     widget.onQueryChanged?.call(_controller.text);
   }
-  
+
   void _onClear() {
     _controller.clear();
     widget.onClear?.call();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return AppBar(
       backgroundColor: theme.colorScheme.surface,
       foregroundColor: theme.colorScheme.onSurface,
       elevation: 0,
       leading: IconButton(
         onPressed: widget.onBack ?? () => AppNavigation.goBack(context),
-        icon: const Icon(Icons.arrow_back),
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.arrow_back_rounded,
+            color: theme.colorScheme.onSurface,
+            size: 20,
+          ),
+        ),
         tooltip: 'ফিরে যান',
       ),
-      title: TextField(
-        controller: _controller,
-        autofocus: widget.autofocus,
-        textInputAction: TextInputAction.search,
-        onSubmitted: widget.onQuerySubmitted,
-        decoration: InputDecoration(
-          hintText: widget.hintText,
-          hintStyle: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+      title: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.outline.withOpacity(0.1),
+            width: 1,
           ),
-          border: InputBorder.none,
-          suffixIcon: _controller.text.isNotEmpty
-              ? IconButton(
-                  onPressed: _onClear,
-                  icon: const Icon(Icons.clear),
-                  tooltip: 'পরিষ্কার করুন',
-                )
-              : null,
         ),
-        style: theme.textTheme.bodyLarge,
+        child: Row(
+          children: [
+            // Search icon
+            Container(
+              margin: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.search_rounded,
+                color: theme.colorScheme.primary,
+                size: 18,
+              ),
+            ),
+
+            // Text field
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                autofocus: widget.autofocus,
+                textInputAction: TextInputAction.search,
+                onSubmitted: widget.onQuerySubmitted,
+                decoration: InputDecoration(
+                  hintText: widget.hintText,
+                  hintStyle: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 16,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 12,
+                  ),
+                ),
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+
+            // Clear button with animation
+            AnimatedBuilder(
+              animation: _fadeAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _fadeAnimation.value,
+                  child: Opacity(
+                    opacity: _fadeAnimation.value,
+                    child: _hasText
+                        ? Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: _onClear,
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.errorContainer,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    color: theme.colorScheme.onErrorContainer,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -191,7 +305,7 @@ class CategoryAppBar extends StatelessWidget implements PreferredSizeWidget {
   final ValueChanged<String?>? onCategoryChanged;
   final VoidCallback? onSearchPressed;
   final VoidCallback? onMenuPressed;
-  
+
   const CategoryAppBar({
     super.key,
     required this.title,
@@ -201,11 +315,11 @@ class CategoryAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.onSearchPressed,
     this.onMenuPressed,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return AppBar(
       title: Text(
         title,
@@ -240,7 +354,9 @@ class CategoryAppBar extends StatelessWidget implements PreferredSizeWidget {
               filled: true,
               fillColor: theme.colorScheme.surface,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+                borderRadius: BorderRadius.circular(
+                  AppConstants.borderRadiusMedium,
+                ),
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.symmetric(
@@ -267,7 +383,7 @@ class CategoryAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
   }
-  
+
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight + 56);
 }
@@ -279,7 +395,7 @@ class PostDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onBookmark;
   final bool isBookmarked;
   final VoidCallback? onBack;
-  
+
   const PostDetailAppBar({
     super.key,
     required this.title,
@@ -288,11 +404,11 @@ class PostDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.isBookmarked = false,
     this.onBack,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return AppBar(
       title: Text(
         title,
@@ -311,9 +427,7 @@ class PostDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
         if (onBookmark != null)
           IconButton(
             onPressed: onBookmark,
-            icon: Icon(
-              isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-            ),
+            icon: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_border),
             tooltip: isBookmarked ? 'বুকমার্ক সরান' : 'বুকমার্ক করুন',
           ),
         if (onShare != null)
@@ -325,7 +439,7 @@ class PostDetailAppBar extends StatelessWidget implements PreferredSizeWidget {
       ],
     );
   }
-  
+
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

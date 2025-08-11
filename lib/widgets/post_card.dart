@@ -285,70 +285,7 @@ class PostCard extends StatelessWidget {
   }
   
   Widget _buildMetadata(ThemeData theme) {
-    final publishDate = post.parsedDate;
-    final readingTime = post.readingTimeMinutes;
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppConstants.paddingMedium,
-        vertical: AppConstants.paddingSmall,
-      ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildMetadataItem(
-            theme,
-            Icons.access_time_rounded,
-            publishDate != null
-                ? AppUtils.formatRelativeTime(publishDate)
-                : 'অজানা তারিখ',
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingSmall),
-            width: 1,
-            height: 12,
-            color: theme.colorScheme.outline.withOpacity(0.3),
-          ),
-          _buildMetadataItem(
-            theme,
-            Icons.schedule_rounded,
-            '$readingTime মিনিট',
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
-  Widget _buildMetadataItem(ThemeData theme, IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Icon(
-            icon,
-            size: 12,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-            fontSize: 11,
-          ),
-        ),
-      ],
-    );
-  }
 }

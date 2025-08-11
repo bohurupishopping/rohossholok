@@ -5,26 +5,41 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:share_plus/share_plus.dart';
-import '../core/constants.dart';
+import 'package:shimmer/shimmer.dart'; // Add this dependency for the shimmer effect
 import '../core/utils.dart';
 import '../widgets/custom_app_bar.dart';
-import '../widgets/loading_spinner.dart';
-import '../widgets/error_widget.dart';
 import '../routes/app_router.dart';
-
 import '../services/wordpress_api_service.dart';
 import '../models/post_model.dart';
 
+// --- A centralized theme class for a modern, consistent UI ---
+class _AppTheme {
+  // Colors
+  static const Color primary = Color(0xFF0D9488); // Teal
+  static const Color textPrimary = Color(0xFF1E293B);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color background = Color(0xFFF8FAFC);
+  static const Color surface = Colors.white;
+  static const Color surfaceContainer = Color(0xFFF1F5F9);
+  static const Color border = Color(0xFFE2E8F0);
+  static const Color error = Color(0xFFDC2626);
 
-/// Screen for displaying individual post details
+  // Placeholders
+  static const Color placeholderBase = Color(0xFFE2E8F0);
+  static const Color placeholderHighlight = Color(0xFFF1F5F9);
+
+  // Spacing & Radii
+  static const double spaceS = 8.0;
+  static const double spaceM = 16.0;
+  static const double spaceL = 24.0;
+  static const double radiusM = 12.0;
+  static const double radiusL = 16.0;
+}
+
 class PostDetailScreen extends StatefulWidget {
   final int postId;
-  
-  const PostDetailScreen({
-    super.key,
-    required this.postId,
-  });
-  
+  const PostDetailScreen({super.key, required this.postId});
+
   @override
   State<PostDetailScreen> createState() => _PostDetailScreenState();
 }
@@ -44,537 +59,311 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
   
   Future<void> _loadPost() async {
-    try {
+    // Preserve existing state while refetching
+    if (mounted) {
       setState(() {
         _isLoading = true;
         _error = null;
       });
-      
+    }
+    
+    try {
       final post = await _apiService.getPost(widget.postId);
-      
-      setState(() {
-        _post = post;
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _post = post);
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
   
   void _sharePost() {
     if (_post != null) {
-      Share.share(
-        '${_post!.title.rendered}\n\n${_post!.link}',
-        subject: _post!.title.rendered,
-      );
+      Share.share('${_post!.title.rendered}\n\n${_post!.link}', subject: _post!.title.rendered);
     }
   }
   
   void _toggleBookmark() {
-    setState(() {
-      _isBookmarked = !_isBookmarked;
-    });
-    
-    // Show feedback
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _isBookmarked ? 'বুকমার্ক করা হয়েছে' : 'বুকমার্ক সরানো হয়েছে',
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    setState(() => _isBookmarked = !_isBookmarked);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(_isBookmarked ? 'বুকমার্ক করা হয়েছে' : 'বুকমার্ক সরানো হয়েছে'),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_AppTheme.radiusM)),
+        margin: const EdgeInsets.all(_AppTheme.spaceM),
+      ));
   }
   
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        appBar: const CustomAppBar(title: 'লোড হচ্ছে...'),
-        body: const Center(child: LoadingSpinner()),
-      );
-    }
-    
-    if (_error != null) {
-      return Scaffold(
-        appBar: const CustomAppBar(title: 'ত্রুটি'),
-        body: AppErrorWidget(
-          message: _error!,
-          onRetry: _loadPost,
-        ),
-      );
-    }
-    
-    if (_post == null) {
-      return Scaffold(
-        appBar: const CustomAppBar(title: 'পোস্ট পাওয়া যায়নি'),
-        body: const NotFoundWidget(
-          message: 'এই পোস্টটি পাওয়া যায়নি।',
-        ),
-      );
-    }
-    
     return Scaffold(
-      appBar: PostDetailAppBar(
-        title: _post!.title.rendered,
-        onShare: _sharePost,
-        onBookmark: _toggleBookmark,
-        isBookmarked: _isBookmarked,
-        onBack: () => AppNavigation.goBack(context),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildFeaturedImage(),
-            _buildPostContent(),
-            _buildPostMeta(),
-            _buildRelatedPosts(),
-          ],
-        ),
-      ),
+      backgroundColor: _AppTheme.background,
+      appBar: _buildAppBar(),
+      body: _buildBody(),
     );
   }
-  
-  Widget _buildFeaturedImage() {
-    final featuredImageUrl = _post!.featuredImageUrl;
+
+  PreferredSizeWidget _buildAppBar() {
+    if (_isLoading) return const CustomAppBar(title: 'লোড হচ্ছে...');
+    if (_error != null) return const CustomAppBar(title: 'ত্রুটি');
+    if (_post == null) return const CustomAppBar(title: 'পোস্ট পাওয়া যায়নি');
     
-    if (featuredImageUrl == null) {
-      return const SizedBox.shrink();
-    }
+    return PostDetailAppBar(
+      title: _post!.title.rendered,
+      onShare: _sharePost,
+      onBookmark: _toggleBookmark,
+      isBookmarked: _isBookmarked,
+      onBack: () => AppNavigation.goBack(context),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) return const _LoadingView();
+    if (_error != null) return _ErrorView(message: _error!, onRetry: _loadPost);
+    if (_post == null) return const _NotFoundView(message: 'এই পোস্টটি পাওয়া যায়নি।');
     
-    return Container(
-      margin: const EdgeInsets.all(AppConstants.paddingMedium),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: CachedNetworkImage(
-            imageUrl: featuredImageUrl,
-            fit: BoxFit.cover,
-            memCacheHeight: 400,
-            memCacheWidth: 600,
-            placeholder: (context, url) => _buildImagePlaceholder(),
-            errorWidget: (context, url, error) => _buildImageError(),
-          ),
-        ),
-      ),
-    );
+    return _PostContentView(post: _post!);
   }
-  
-  Widget _buildImagePlaceholder() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.surfaceContainerHighest,
-            Theme.of(context).colorScheme.surfaceContainerHigh,
-          ],
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.image_outlined,
-              size: 48,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
-            ),
-            const SizedBox(height: AppConstants.paddingSmall),
-            const LoadingSpinner(),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildImageError() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.errorContainer.withOpacity(0.1),
-            Theme.of(context).colorScheme.surfaceContainerHighest,
-          ],
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.broken_image_outlined,
-              size: 48,
-              color: Theme.of(context).colorScheme.error.withOpacity(0.7),
-            ),
-            const SizedBox(height: AppConstants.paddingSmall),
-            Text(
-              'ছবি লোড করা যায়নি',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildPostContent() {
-    final theme = Theme.of(context);
-    
-    return Padding(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+}
+
+// --- Main Content View ---
+
+class _PostContentView extends StatelessWidget {
+  final PostModel post;
+  const _PostContentView({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: _AppTheme.spaceL),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title
-          Text(
-            _post!.title.rendered,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              height: 1.3,
-            ),
-          ),
-          
-          const SizedBox(height: AppConstants.paddingMedium),
-          
-          // Post meta
-          _buildPostMetaRow(),
-          
-          const SizedBox(height: AppConstants.paddingMedium),
-          
-          // Categories
-          if (_post!.getCategoryNames().isNotEmpty)
-            _buildCategoriesRow(),
-          
-          const SizedBox(height: AppConstants.paddingLarge),
-          
-          // Content
-          Html(
-            data: _post!.content.rendered,
-            style: {
-              'body': Style(
-                fontSize: FontSize(16),
-                lineHeight: const LineHeight(1.6),
-                margin: Margins.zero,
-                padding: HtmlPaddings.zero,
-              ),
-              'p': Style(
-                margin: Margins.only(
-                  bottom: AppConstants.paddingMedium,
-                ),
-              ),
-              'h1, h2, h3, h4, h5, h6': Style(
-                fontWeight: FontWeight.bold,
-                margin: Margins.only(
-                  top: AppConstants.paddingLarge,
-                  bottom: AppConstants.paddingMedium,
-                ),
-              ),
-              'blockquote': Style(
-                border: Border(
-                  left: BorderSide(
-                    color: theme.colorScheme.primary,
-                    width: 4,
-                  ),
-                ),
-                padding: HtmlPaddings.only(
-                  left: AppConstants.paddingMedium,
-                ),
-                margin: Margins.symmetric(
-                  vertical: AppConstants.paddingMedium,
-                ),
-                backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              ),
-              'code': Style(
-                backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                padding: HtmlPaddings.symmetric(
-                  horizontal: 4,
-                  vertical: 2,
-                ),
-                fontFamily: 'monospace',
-              ),
-              'pre': Style(
-                backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                padding: HtmlPaddings.all(AppConstants.paddingMedium),
-                margin: Margins.symmetric(
-                  vertical: AppConstants.paddingMedium,
-                ),
-              ),
-            },
-            onLinkTap: (url, attributes, element) {
-              if (url != null) {
-                AppUtils.launchURL(url);
-              }
-            },
-          ),
+          if (post.featuredImageUrl != null)
+            _FeaturedImage(imageUrl: post.featuredImageUrl!),
+          _PostHeader(post: post),
+          _PostHtmlContent(htmlData: post.content.rendered),
+          _PostInfoCard(post: post),
+          const _RelatedPostsSection(),
         ],
       ),
     );
   }
-  
-  Widget _buildPostMetaRow() {
-    final theme = Theme.of(context);
-    final publishDate = _post!.getFormattedDate();
-    final readingTime = _post!.getEstimatedReadingTime();
-    final authorName = _post!.getAuthorName();
-    
-    return Wrap(
-      spacing: AppConstants.paddingMedium,
-      runSpacing: AppConstants.paddingSmall,
-      children: [
-        _buildMetaItem(
-          icon: Icons.calendar_today,
-          text: publishDate,
-          theme: theme,
-        ),
-        _buildMetaItem(
-          icon: Icons.access_time,
-          text: '$readingTime মিনিট পড়ার সময়',
-          theme: theme,
-        ),
-        if (authorName.isNotEmpty)
-          _buildMetaItem(
-            icon: Icons.person,
-            text: authorName,
-            theme: theme,
+}
+
+// --- UI Components ---
+
+class _FeaturedImage extends StatelessWidget {
+  final String imageUrl;
+  const _FeaturedImage({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(_AppTheme.spaceM),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(_AppTheme.radiusL),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: CachedNetworkImage(
+            imageUrl: imageUrl,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => const _ImagePlaceholder(),
+            errorWidget: (context, url, error) => const _ImageError(),
           ),
-      ],
+        ),
+      ),
     );
   }
-  
-  Widget _buildMetaItem({
-    required IconData icon,
-    required String text,
-    required ThemeData theme,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppConstants.paddingMedium,
-        vertical: AppConstants.paddingSmall,
+}
+
+class _PostHeader extends StatelessWidget {
+  final PostModel post;
+  const _PostHeader({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _AppTheme.spaceM),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            post.title.rendered,
+            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: _AppTheme.textPrimary, height: 1.3),
+          ),
+          const SizedBox(height: _AppTheme.spaceM),
+          Wrap(
+            spacing: _AppTheme.spaceS,
+            runSpacing: _AppTheme.spaceS,
+            children: [
+              _PostMetaChip(icon: Icons.calendar_today_outlined, text: post.getFormattedDate()),
+              _PostMetaChip(icon: Icons.access_time, text: '${post.getEstimatedReadingTime()} মিনিট পড়ার সময়'),
+              if (post.getAuthorName().isNotEmpty)
+                _PostMetaChip(icon: Icons.person_outline, text: post.getAuthorName()),
+            ],
+          ),
+          const SizedBox(height: _AppTheme.spaceS),
+          if (post.getCategoryNames().isNotEmpty)
+            _CategoryChips(categories: post.getCategoryNames()),
+        ],
       ),
+    );
+  }
+}
+
+class _PostMetaChip extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _PostMetaChip({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: _AppTheme.spaceS, vertical: 6),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
-          width: 1,
-        ),
+        color: _AppTheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(_AppTheme.radiusM),
+        border: Border.all(color: _AppTheme.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(
-              icon,
-              size: 14,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
-              fontSize: 12,
-            ),
-          ),
+          Icon(icon, size: 14, color: _AppTheme.textSecondary),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(color: _AppTheme.textSecondary, fontWeight: FontWeight.w500, fontSize: 12)),
         ],
       ),
     );
   }
-  
-  Widget _buildCategoriesRow() {
-    final theme = Theme.of(context);
-    
-    return Wrap(
-      spacing: AppConstants.paddingSmall,
-      runSpacing: AppConstants.paddingSmall,
-      children: _post!.getCategoryNames().map(
-        (categoryName) => Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.paddingMedium,
-            vertical: AppConstants.paddingSmall,
-          ),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primaryContainer.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
-            border: Border.all(
-              color: theme.colorScheme.primary.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.tag_rounded,
-                size: 12,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                categoryName,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
+}
+
+class _CategoryChips extends StatelessWidget {
+  final List<String> categories;
+  const _CategoryChips({required this.categories});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: _AppTheme.spaceS),
+      child: Wrap(
+        spacing: _AppTheme.spaceS,
+        runSpacing: _AppTheme.spaceS,
+        children: categories.map((name) => Chip(
+          label: Text(name),
+          avatar: const Icon(Icons.tag, size: 14, color: _AppTheme.primary),
+          backgroundColor: _AppTheme.primary.withOpacity(0.1),
+          labelStyle: const TextStyle(color: _AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 11),
+          padding: const EdgeInsets.symmetric(horizontal: _AppTheme.spaceS),
+          side: BorderSide.none,
+        )).toList(),
+      ),
+    );
+  }
+}
+
+class _PostHtmlContent extends StatelessWidget {
+  final String htmlData;
+  const _PostHtmlContent({required this.htmlData});
+
+  @override
+  Widget build(BuildContext context) {
+    return Html(
+      data: htmlData,
+      style: {
+        'body': Style(fontSize: FontSize(16.0), lineHeight: const LineHeight(1.7), color: _AppTheme.textPrimary, margin: Margins.all(_AppTheme.spaceM), padding: HtmlPaddings.zero),
+        'p': Style(margin: Margins.only(bottom: _AppTheme.spaceM)),
+        'h1, h2, h3, h4, h5, h6': Style(fontWeight: FontWeight.bold, margin: Margins.only(top: _AppTheme.spaceL, bottom: _AppTheme.spaceS)),
+        'blockquote': Style(
+          border: const Border(left: BorderSide(color: _AppTheme.primary, width: 4)),
+          padding: HtmlPaddings.only(left: _AppTheme.spaceM),
+          margin: Margins.symmetric(vertical: _AppTheme.spaceM),
+          backgroundColor: _AppTheme.surfaceContainer,
         ),
-      ).toList(),
+        'code': Style(backgroundColor: _AppTheme.surfaceContainer, fontFamily: 'monospace', padding: HtmlPaddings.symmetric(horizontal: 4, vertical: 2)),
+        'pre': Style(backgroundColor: _AppTheme.surfaceContainer, padding: HtmlPaddings.all(_AppTheme.spaceM), margin: Margins.symmetric(vertical: _AppTheme.spaceM)),
+      },
+      onLinkTap: (url, _, __) => (url != null) ? AppUtils.launchURL(url) : null,
     );
   }
-  
-  Widget _buildPostMeta() {
-    final theme = Theme.of(context);
-    
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppConstants.paddingMedium,
-      ),
-      padding: const EdgeInsets.all(AppConstants.paddingLarge),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.1),
-          width: 1,
+}
+
+class _PostInfoCard extends StatelessWidget {
+  final PostModel post;
+  const _PostInfoCard({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(_AppTheme.spaceM),
+      child: Container(
+        padding: const EdgeInsets.all(_AppTheme.spaceL),
+        decoration: BoxDecoration(
+          color: _AppTheme.surface,
+          borderRadius: BorderRadius.circular(_AppTheme.radiusL),
+          border: Border.all(color: _AppTheme.border),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-                ),
-                child: Icon(
-                  Icons.info_outline_rounded,
-                  size: 20,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: AppConstants.paddingMedium),
-              Text(
-                'পোস্ট তথ্য',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppConstants.paddingMedium),
-          _buildMetaRow('প্রকাশিত', _post!.getFormattedDate(), Icons.calendar_today_rounded),
-          _buildMetaRow('আপডেট', _post!.getFormattedModifiedDate(), Icons.update_rounded),
-          _buildMetaRow('পড়ার সময়', '${_post!.getEstimatedReadingTime()} মিনিট', Icons.schedule_rounded),
-          if (_post!.getAuthorName().isNotEmpty)
-            _buildMetaRow('লেখক', _post!.getAuthorName(), Icons.person_rounded),
-        ],
+        child: Column(
+          children: [
+            const _SectionHeader(icon: Icons.info_outline_rounded, title: 'পোস্ট তথ্য'),
+            const SizedBox(height: _AppTheme.spaceM),
+            _InfoRow(label: 'প্রকাশিত', value: post.getFormattedDate(), icon: Icons.calendar_today_outlined),
+            _InfoRow(label: 'আপডেট', value: post.getFormattedModifiedDate(), icon: Icons.update_outlined),
+            if (post.getAuthorName().isNotEmpty)
+              _InfoRow(label: 'লেখক', value: post.getAuthorName(), icon: Icons.person_outline),
+          ],
+        ),
       ),
     );
   }
-  
-  Widget _buildMetaRow(String label, String value, IconData icon) {
-    final theme = Theme.of(context);
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppConstants.paddingSmall),
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-      ),
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label, value;
+  final IconData icon;
+  const _InfoRow({required this.label, required this.value, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: _AppTheme.spaceS),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(
-              icon,
-              size: 16,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: AppConstants.paddingMedium),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontSize: 11,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          Icon(icon, size: 18, color: _AppTheme.textSecondary),
+          const SizedBox(width: _AppTheme.spaceM),
+          Text(label, style: const TextStyle(color: _AppTheme.textSecondary, fontWeight: FontWeight.w500)),
+          const Spacer(),
+          Text(value, style: const TextStyle(color: _AppTheme.textPrimary, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
-  
-  Widget _buildRelatedPosts() {
-    // This would load related posts based on categories or tags
-    // For now, we'll show a placeholder
-    return Container(
-      margin: const EdgeInsets.all(AppConstants.paddingMedium),
+}
+
+class _RelatedPostsSection extends StatelessWidget {
+  const _RelatedPostsSection();
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _AppTheme.spaceM),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'সম্পর্কিত পোস্ট',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+          const _SectionHeader(icon: Icons.article_outlined, title: 'সম্পর্কিত পোস্ট'),
+          const SizedBox(height: _AppTheme.spaceM),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(_AppTheme.spaceL),
+            decoration: BoxDecoration(
+              color: _AppTheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(_AppTheme.radiusL),
+              border: Border.all(color: _AppTheme.border),
             ),
-          ),
-          const SizedBox(height: AppConstants.paddingMedium),
-          const Text(
-            'সম্পর্কিত পোস্ট শীঘ্রই আসছে...',
-            style: TextStyle(fontStyle: FontStyle.italic),
+            child: const Center(
+              child: Text('সম্পর্কিত পোস্ট শীঘ্রই আসছে...', style: TextStyle(fontStyle: FontStyle.italic, color: _AppTheme.textSecondary)),
+            ),
           ),
         ],
       ),
@@ -582,55 +371,140 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   }
 }
 
-/// Floating action button for post actions
-class PostActionsFAB extends StatelessWidget {
-  final VoidCallback? onShare;
-  final VoidCallback? onBookmark;
-  final VoidCallback? onCopyLink;
-  final bool isBookmarked;
-  
-  const PostActionsFAB({
-    super.key,
-    this.onShare,
-    this.onBookmark,
-    this.onCopyLink,
-    this.isBookmarked = false,
-  });
-  
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  const _SectionHeader({required this.icon, required this.title});
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Row(
       children: [
-        if (onBookmark != null)
-          FloatingActionButton(
-            heroTag: 'bookmark',
-            onPressed: onBookmark,
-            backgroundColor: isBookmarked
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Icon(
-              isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-              color: isBookmarked
-                  ? Theme.of(context).colorScheme.onPrimary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        const SizedBox(height: AppConstants.paddingSmall),
-        if (onShare != null)
-          FloatingActionButton(
-            heroTag: 'share',
-            onPressed: onShare,
-            child: const Icon(Icons.share),
-          ),
-        const SizedBox(height: AppConstants.paddingSmall),
-        if (onCopyLink != null)
-          FloatingActionButton(
-            heroTag: 'copy',
-            onPressed: onCopyLink,
-            child: const Icon(Icons.link),
-          ),
+        Icon(icon, size: 20, color: _AppTheme.primary),
+        const SizedBox(width: _AppTheme.spaceS),
+        Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: _AppTheme.textPrimary)),
       ],
+    );
+  }
+}
+
+// --- Image Placeholder & Error Widgets ---
+
+class _ImagePlaceholder extends StatelessWidget {
+  const _ImagePlaceholder();
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: _AppTheme.placeholderBase,
+      highlightColor: _AppTheme.placeholderHighlight,
+      child: Container(color: _AppTheme.surface),
+    );
+  }
+}
+
+class _ImageError extends StatelessWidget {
+  const _ImageError();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: _AppTheme.surfaceContainer,
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.broken_image_outlined, size: 48, color: _AppTheme.textSecondary),
+          SizedBox(height: _AppTheme.spaceS),
+          Text('ছবি লোড করা যায়নি', style: TextStyle(color: _AppTheme.textSecondary)),
+        ],
+      ),
+    );
+  }
+}
+
+// --- State Views (Loading, Error, Not Found) ---
+
+class _LoadingView extends StatelessWidget {
+  const _LoadingView();
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: _AppTheme.placeholderBase,
+      highlightColor: _AppTheme.placeholderHighlight,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(_AppTheme.spaceM),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(height: 200, width: double.infinity, decoration: BoxDecoration(color: _AppTheme.surface, borderRadius: BorderRadius.circular(_AppTheme.radiusL))),
+            const SizedBox(height: _AppTheme.spaceM),
+            Container(height: 32, width: double.infinity, decoration: BoxDecoration(color: _AppTheme.surface, borderRadius: BorderRadius.circular(_AppTheme.radiusM))),
+            const SizedBox(height: _AppTheme.spaceS),
+            Container(height: 24, width: 200, decoration: BoxDecoration(color: _AppTheme.surface, borderRadius: BorderRadius.circular(_AppTheme.radiusM))),
+            const SizedBox(height: _AppTheme.spaceL),
+            Container(height: 16, width: double.infinity, decoration: BoxDecoration(color: _AppTheme.surface, borderRadius: BorderRadius.circular(_AppTheme.radiusM))),
+            const SizedBox(height: _AppTheme.spaceS),
+            Container(height: 16, width: double.infinity, decoration: BoxDecoration(color: _AppTheme.surface, borderRadius: BorderRadius.circular(_AppTheme.radiusM))),
+            const SizedBox(height: _AppTheme.spaceS),
+            Container(height: 16, width: 250, decoration: BoxDecoration(color: _AppTheme.surface, borderRadius: BorderRadius.circular(_AppTheme.radiusM))),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorView({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(_AppTheme.spaceL),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.cloud_off_rounded, size: 60, color: _AppTheme.error),
+            const SizedBox(height: _AppTheme.spaceM),
+            const Text('ত্রুটি', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _AppTheme.textPrimary)),
+            const SizedBox(height: _AppTheme.spaceS),
+            Text(message, style: const TextStyle(fontSize: 14, color: _AppTheme.textSecondary), textAlign: TextAlign.center),
+            const SizedBox(height: _AppTheme.spaceL),
+            ElevatedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('আবার চেষ্টা করুন'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _AppTheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_AppTheme.radiusM)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotFoundView extends StatelessWidget {
+  final String message;
+  const _NotFoundView({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.search_off_rounded, size: 60, color: _AppTheme.textSecondary),
+          const SizedBox(height: _AppTheme.spaceM),
+          const Text('পোস্ট পাওয়া যায়নি', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _AppTheme.textPrimary)),
+          const SizedBox(height: _AppTheme.spaceS),
+          Text(message, style: const TextStyle(fontSize: 14, color: _AppTheme.textSecondary), textAlign: TextAlign.center),
+        ],
+      ),
     );
   }
 }

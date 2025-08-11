@@ -8,7 +8,7 @@ class AppErrorWidget extends StatelessWidget {
   final IconData? icon;
   final String? retryButtonText;
   final bool showRetryButton;
-  
+
   const AppErrorWidget({
     super.key,
     required this.message,
@@ -17,11 +17,11 @@ class AppErrorWidget extends StatelessWidget {
     this.retryButtonText,
     this.showRetryButton = true,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.paddingLarge),
@@ -43,8 +43,7 @@ class AppErrorWidget extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            if (showRetryButton && onRetry != null) ...
-            [
+            if (showRetryButton && onRetry != null) ...[
               const SizedBox(height: AppConstants.paddingLarge),
               ElevatedButton.icon(
                 onPressed: onRetry,
@@ -62,16 +61,14 @@ class AppErrorWidget extends StatelessWidget {
 /// Network error widget
 class NetworkErrorWidget extends StatelessWidget {
   final VoidCallback? onRetry;
-  
-  const NetworkErrorWidget({
-    super.key,
-    this.onRetry,
-  });
-  
+
+  const NetworkErrorWidget({super.key, this.onRetry});
+
   @override
   Widget build(BuildContext context) {
     return AppErrorWidget(
-      message: 'ইন্টারনেট সংযোগ নেই। অনুগ্রহ করে আপনার ইন্টারনেট সংযোগ পরীক্ষা করুন।',
+      message:
+          'ইন্টারনেট সংযোগ নেই। অনুগ্রহ করে আপনার ইন্টারনেট সংযোগ পরীক্ষা করুন।',
       icon: Icons.wifi_off,
       onRetry: onRetry,
       retryButtonText: 'আবার চেষ্টা করুন',
@@ -82,16 +79,14 @@ class NetworkErrorWidget extends StatelessWidget {
 /// Server error widget
 class ServerErrorWidget extends StatelessWidget {
   final VoidCallback? onRetry;
-  
-  const ServerErrorWidget({
-    super.key,
-    this.onRetry,
-  });
-  
+
+  const ServerErrorWidget({super.key, this.onRetry});
+
   @override
   Widget build(BuildContext context) {
     return AppErrorWidget(
-      message: 'সার্ভারে সমস্যা হয়েছে। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।',
+      message:
+          'সার্ভারে সমস্যা হয়েছে। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।',
       icon: Icons.cloud_off,
       onRetry: onRetry,
       retryButtonText: 'আবার চেষ্টা করুন',
@@ -103,13 +98,9 @@ class ServerErrorWidget extends StatelessWidget {
 class NotFoundWidget extends StatelessWidget {
   final String? message;
   final VoidCallback? onGoBack;
-  
-  const NotFoundWidget({
-    super.key,
-    this.message,
-    this.onGoBack,
-  });
-  
+
+  const NotFoundWidget({super.key, this.message, this.onGoBack});
+
   @override
   Widget build(BuildContext context) {
     return AppErrorWidget(
@@ -128,7 +119,7 @@ class EmptyStateWidget extends StatelessWidget {
   final IconData? icon;
   final VoidCallback? onAction;
   final String? actionButtonText;
-  
+
   const EmptyStateWidget({
     super.key,
     required this.message,
@@ -136,11 +127,11 @@ class EmptyStateWidget extends StatelessWidget {
     this.onAction,
     this.actionButtonText,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.paddingLarge),
@@ -160,8 +151,7 @@ class EmptyStateWidget extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            if (onAction != null && actionButtonText != null) ...
-            [
+            if (onAction != null && actionButtonText != null) ...[
               const SizedBox(height: AppConstants.paddingLarge),
               ElevatedButton(
                 onPressed: onAction,
@@ -178,12 +168,9 @@ class EmptyStateWidget extends StatelessWidget {
 /// No posts widget
 class NoPostsWidget extends StatelessWidget {
   final VoidCallback? onRefresh;
-  
-  const NoPostsWidget({
-    super.key,
-    this.onRefresh,
-  });
-  
+
+  const NoPostsWidget({super.key, this.onRefresh});
+
   @override
   Widget build(BuildContext context) {
     return EmptyStateWidget(
@@ -198,12 +185,9 @@ class NoPostsWidget extends StatelessWidget {
 /// No categories widget
 class NoCategoriesWidget extends StatelessWidget {
   final VoidCallback? onRefresh;
-  
-  const NoCategoriesWidget({
-    super.key,
-    this.onRefresh,
-  });
-  
+
+  const NoCategoriesWidget({super.key, this.onRefresh});
+
   @override
   Widget build(BuildContext context) {
     return EmptyStateWidget(
@@ -215,24 +199,91 @@ class NoCategoriesWidget extends StatelessWidget {
   }
 }
 
-/// Search no results widget
+/// Modern search no results widget
 class SearchNoResultsWidget extends StatelessWidget {
   final String searchQuery;
   final VoidCallback? onClearSearch;
-  
+
   const SearchNoResultsWidget({
     super.key,
     required this.searchQuery,
     this.onClearSearch,
   });
-  
+
   @override
   Widget build(BuildContext context) {
-    return EmptyStateWidget(
-      message: '"$searchQuery" এর জন্য কোনো ফলাফল পাওয়া যায়নি।',
-      icon: Icons.search_off,
-      onAction: onClearSearch,
-      actionButtonText: 'অনুসন্ধান পরিষ্কার করুন',
+    final theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Icon(
+                Icons.search_off_rounded,
+                size: 64,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'কোনো ফলাফল পাওয়া যায়নি',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                children: [
+                  const TextSpan(text: '"'),
+                  TextSpan(
+                    text: searchQuery,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const TextSpan(
+                    text:
+                        '" এর জন্য কোনো ফলাফল পাওয়া যায়নি।\nঅন্য কিছু খুঁজে দেখুন।',
+                  ),
+                ],
+              ),
+            ),
+            if (onClearSearch != null) ...[
+              const SizedBox(height: 32),
+              FilledButton.icon(
+                onPressed: onClearSearch,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('নতুন অনুসন্ধান'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

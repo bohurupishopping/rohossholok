@@ -8,55 +8,51 @@ import 'constants.dart';
 class AppTheme {
   // Private constructor to prevent instantiation
   AppTheme._();
-  
+
   /// Light theme configuration
   static ThemeData get lightTheme {
     const ColorScheme colorScheme = ColorScheme.light(
       // Primary colors - Deep blue for mystery theme
       primary: Color(AppColors.primaryBlue),
-      onPrimary: Color(AppColors.white),
+      onPrimary: Colors.white,
       primaryContainer: Color(0xFFBBDEFB), // Light blue
       onPrimaryContainer: Color(0xFF0D47A1), // Dark blue
-      
       // Secondary colors - Warm orange for accent
-      secondary: Color(AppColors.primaryOrange),
-      onSecondary: Color(AppColors.white),
+      secondary: Color(AppColors.accentOrange),
+      onSecondary: Colors.white,
       secondaryContainer: Color(0xFFFFE0B2), // Light orange
       onSecondaryContainer: Color(0xFFE65100), // Dark orange
-      
       // Surface colors
-      surface: Color(AppColors.white),
-      onSurface: Color(AppColors.darkGrey),
-      surfaceContainerHighest: Color(AppColors.lightGrey),
+      surface: Colors.white,
+      onSurface: Color(AppColors.neutral800),
+      surfaceContainerHighest: Color(AppColors.neutral200),
       onSurfaceVariant: Color(0xFF757575), // Medium grey
-      
       // Background colors
       background: Color(0xFFFAFAFA), // Very light grey
-      onBackground: Color(AppColors.darkGrey),
-      
+      onBackground: Color(AppColors.neutral800),
+
       // Error colors
       error: Color(AppColors.error),
-      onError: Color(AppColors.white),
+      onError: Colors.white,
       errorContainer: Color(0xFFFFEBEE), // Light red
       onErrorContainer: Color(0xFFB71C1C), // Dark red
-      
       // Outline and shadow
       outline: Color(0xFFBDBDBD), // Light grey for borders
-      shadow: Color(AppColors.black),
-      
+      shadow: Colors.black,
+
       // Inverse colors
       inverseSurface: Color(0xFF303030), // Dark grey
-      onInverseSurface: Color(AppColors.white),
+      onInverseSurface: Colors.white,
       inversePrimary: Color(0xFF90CAF9), // Light blue
     );
-    
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      
+
       // Typography
       textTheme: _buildTextTheme(colorScheme),
-      
+
       // App Bar Theme
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
@@ -80,7 +76,7 @@ class AppTheme {
           systemNavigationBarIconBrightness: Brightness.dark,
         ),
       ),
-      
+
       // Card Theme
       cardTheme: CardThemeData(
         color: colorScheme.surface,
@@ -93,7 +89,7 @@ class AppTheme {
           vertical: AppConstants.paddingSmall,
         ),
       ),
-      
+
       // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -105,7 +101,9 @@ class AppTheme {
             vertical: AppConstants.paddingMedium,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+            borderRadius: BorderRadius.circular(
+              AppConstants.borderRadiusMedium,
+            ),
           ),
           textStyle: const TextStyle(
             fontFamily: AppTypography.bengaliFont,
@@ -114,7 +112,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Text Button Theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
@@ -133,7 +131,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Outlined Button Theme
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
@@ -144,7 +142,9 @@ class AppTheme {
             vertical: AppConstants.paddingMedium,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
+            borderRadius: BorderRadius.circular(
+              AppConstants.borderRadiusMedium,
+            ),
           ),
           textStyle: const TextStyle(
             fontFamily: AppTypography.bengaliFont,
@@ -153,7 +153,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -164,7 +164,9 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
-          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.5)),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.5),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppConstants.borderRadiusMedium),
@@ -193,12 +195,14 @@ class AppTheme {
           color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
         ),
       ),
-      
+
       // Chip Theme
       chipTheme: ChipThemeData(
         backgroundColor: colorScheme.surfaceContainerHighest,
         selectedColor: colorScheme.primaryContainer,
-        disabledColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        disabledColor: colorScheme.surfaceContainerHighest.withValues(
+          alpha: 0.5,
+        ),
         labelStyle: TextStyle(
           fontFamily: AppTypography.bengaliFont,
           fontSize: AppTypography.bodySmall,
@@ -217,7 +221,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppConstants.borderRadiusLarge),
         ),
       ),
-      
+
       // Drawer Theme
       drawerTheme: DrawerThemeData(
         backgroundColor: colorScheme.surface,
@@ -229,7 +233,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // List Tile Theme
       listTileTheme: ListTileThemeData(
         contentPadding: const EdgeInsets.symmetric(
@@ -249,7 +253,7 @@ class AppTheme {
         ),
         iconColor: colorScheme.onSurfaceVariant,
       ),
-      
+
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: colorScheme.surface,
@@ -268,20 +272,20 @@ class AppTheme {
           fontWeight: FontWeight.w400,
         ),
       ),
-      
+
       // Divider Theme
       dividerTheme: DividerThemeData(
         color: colorScheme.outline.withValues(alpha: 0.2),
         thickness: 1,
         space: 1,
       ),
-      
+
       // Icon Theme
       iconTheme: IconThemeData(
         color: colorScheme.onSurfaceVariant,
         size: AppConstants.iconSizeMedium,
       ),
-      
+
       // Primary Icon Theme
       primaryIconTheme: IconThemeData(
         color: colorScheme.primary,
@@ -289,7 +293,7 @@ class AppTheme {
       ),
     );
   }
-  
+
   /// Build text theme with Bengali font support
   static TextTheme _buildTextTheme(ColorScheme colorScheme) {
     return TextTheme(
@@ -315,7 +319,7 @@ class AppTheme {
         letterSpacing: 0,
         color: colorScheme.onSurface,
       ),
-      
+
       // Headline styles
       headlineLarge: TextStyle(
         fontFamily: AppTypography.bengaliFont,
@@ -338,7 +342,7 @@ class AppTheme {
         letterSpacing: 0,
         color: colorScheme.onSurface,
       ),
-      
+
       // Title styles
       titleLarge: TextStyle(
         fontFamily: AppTypography.bengaliFont,
@@ -361,7 +365,7 @@ class AppTheme {
         letterSpacing: 0.1,
         color: colorScheme.onSurface,
       ),
-      
+
       // Body styles
       bodyLarge: TextStyle(
         fontFamily: AppTypography.bengaliFont,
@@ -387,7 +391,7 @@ class AppTheme {
         color: colorScheme.onSurfaceVariant,
         height: 1.3,
       ),
-      
+
       // Label styles
       labelLarge: TextStyle(
         fontFamily: AppTypography.bengaliFont,
