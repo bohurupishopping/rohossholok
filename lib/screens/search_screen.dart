@@ -1,17 +1,16 @@
-// ignore_for_file: deprecated_member_use, must_be_immutable
+// ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:go_router/go_router.dart';
 
 import '../providers/posts_cubit.dart';
 import '../providers/categories_cubit.dart';
 import '../models/post_model.dart';
 import '../routes/app_router.dart';
 
-// --- Centralized Modern UI Theme ---
+// --- Centralized Modern UI Theme (Unchanged) ---
 class _AppTheme {
   static const Color scaffoldBg = Color(0xFFF6F8FD);
   static const Color surface = Colors.white;
@@ -46,14 +45,12 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
-  final FocusNode _searchFocusNode = FocusNode();
-  
-  // Note: Filter state is kept simple here. For a real app,
-  // this might be managed in a separate Cubit.
+  final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
+  final _searchFocusNode = FocusNode();
+
   String? _selectedCategory;
-  
+
   @override
   void initState() {
     super.initState();
@@ -67,32 +64,22 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _searchController.dispose();
     _scrollController.dispose();
+    _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
   }
 
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 300) {
-      final cubit = context.read<PostsCubit>();
-      final state = cubit.state;
-      state.whenOrNull(
-        loaded: (posts, hasMore, _, categoryId, searchQuery) {
-          if (hasMore && searchQuery != null && searchQuery.isNotEmpty) {
-            cubit.loadMorePosts();
-          }
-        },
-      );
+      context.read<PostsCubit>().loadMorePosts();
     }
   }
 
-
-  
   void _performSearch(String query) {
     if (query.trim().isEmpty) return;
-    context.read<PostsCubit>().searchPosts(query, categoryId: _selectedCategory != null ? int.tryParse(_selectedCategory!) : null);
+    context.read<PostsCubit>().searchPosts(query,
+        categoryId: _selectedCategory != null ? int.tryParse(_selectedCategory!) : null);
     _searchFocusNode.unfocus();
   }
 
@@ -106,134 +93,91 @@ class _SearchScreenState extends State<SearchScreen> {
   void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: _AppTheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(_AppTheme.radiusL)),
-      ),
-      builder: (_) => _FilterSheetContent(
-        categoriesCubit: context.read<CategoriesCubit>(),
-        selectedCategory: _selectedCategory,
-        onCategorySelected: (category) {
-          setState(() => _selectedCategory = category);
-          if (_searchController.text.isNotEmpty) _performSearch(_searchController.text);
-          Navigator.pop(context);
-        },
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BlocProvider.value(
+        value: context.read<CategoriesCubit>(),
+        child: _FilterSheetContent(
+          selectedCategory: _selectedCategory,
+          onCategorySelected: (category) {
+            setState(() => _selectedCategory = category);
+            if (_searchController.text.isNotEmpty) {
+              _performSearch(_searchController.text);
+            }
+            Navigator.pop(context);
+          },
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _AppTheme.scaffoldBg,
-      appBar: _ModernSearchAppBar(
-        searchController: _searchController,
-        searchFocusNode: _searchFocusNode,
-        onSubmitted: _performSearch,
-        onClear: _clearSearch,
-        onFilterTap: _showFilterSheet,
-      ),
-      body: BlocBuilder<PostsCubit, PostsState>(
-        builder: (context, state) {
-          return state.when(
-            initial: () => _buildInitialState(),
-            loading: () => const _FeedSkeleton(),
-            loaded: (posts, hasMore, _, _, searchQuery) {
-              if (searchQuery == null || searchQuery.isEmpty) return _buildInitialState();
-              if (posts.isEmpty) {
-                return _SearchNoResults(query: searchQuery, onClear: _clearSearch);
-              }
-              return _buildResultsList(posts, hasMore);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          AppNavigation.goBack(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: _AppTheme.scaffoldBg,
+        appBar: _ModernSearchAppBar(
+          searchController: _searchController,
+          searchFocusNode: _searchFocusNode,
+          onSubmitted: _performSearch,
+          onClear: _clearSearch,
+          onFilterTap: _showFilterSheet,
+        ),
+        body: SafeArea(
+          top: false, // SafeArea for the top is handled by the AppBar
+          child: BlocBuilder<PostsCubit, PostsState>(
+            builder: (context, state) {
+              return state.when(
+                initial: () => const _InitialSearchPrompt(),
+                loading: () => const _FeedSkeleton(),
+                loaded: (posts, hasMore, _, _, searchQuery) {
+                  if (searchQuery == null || searchQuery.isEmpty) {
+                    return const _InitialSearchPrompt();
+                  }
+                  if (posts.isEmpty) {
+                    return _SearchNoResults(query: searchQuery, onClear: _clearSearch);
+                  }
+                  return _buildResultsList(posts, hasMore);
+                },
+                error: (message) =>
+                    _ModernErrorState(message: message, onRetry: () => _performSearch(_searchController.text)),
+              );
             },
-            error: (message) => _ModernErrorState(message: message, onRetry: () => _performSearch(_searchController.text)),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildInitialState() {
-    final popularTopics = ['Technology', 'Sports', 'Philosophy', 'Science', 'Health', 'Education'];
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(_AppTheme.spaceL),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: _AppTheme.spaceL),
-          Center(
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(_AppTheme.spaceL),
-                  decoration: BoxDecoration(
-                    color: _AppTheme.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.search_rounded,
-                    size: 48,
-                    color: _AppTheme.primary,
-                  ),
-                ),
-                const SizedBox(height: _AppTheme.spaceM),
-                const Text(
-                  'Discover Articles',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: _AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: _AppTheme.spaceS),
-                const Text(
-                  'Search for articles on topics you\'re interested in',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _AppTheme.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: _AppTheme.spaceL),
-          _ModernSectionHeader(title: 'Popular Topics'),
-          const SizedBox(height: _AppTheme.spaceM),
-          _ModernTopicsGrid(
-            topics: popularTopics,
-            onTopicTap: (topic) {
-              _searchController.text = topic;
-              _performSearch(topic);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-  
   Widget _buildResultsList(List<PostModel> posts, bool hasMore) {
+    final itemCount = posts.length + (hasMore ? 1 : 0);
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(_AppTheme.spaceM),
-      itemCount: posts.length + (hasMore ? 1 : 0),
+      itemCount: itemCount,
       itemBuilder: (context, index) {
-        if (index < posts.length) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: _AppTheme.spaceM),
-            child: _FeedPostCard(post: posts[index]),
-          );
-        } else {
+        if (index >= posts.length) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 32.0),
             child: Center(child: CircularProgressIndicator(color: _AppTheme.primary)),
           );
         }
+        return Padding(
+          padding: const EdgeInsets.only(bottom: _AppTheme.spaceM),
+          child: _FeedPostCard(post: posts[index]),
+        );
       },
     );
   }
 }
 
-// --- New UI Components ---
+// --- UI Components (Optimized with const and revamped AppBar) ---
 
 class _ModernSearchAppBar extends StatelessWidget implements PreferredSizeWidget {
   final TextEditingController searchController;
@@ -253,45 +197,43 @@ class _ModernSearchAppBar extends StatelessWidget implements PreferredSizeWidget
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: _AppTheme.scaffoldBg,
+      backgroundColor: Colors.transparent, // Makes the AppBar background invisible
       elevation: 0,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: _AppTheme.textPrimary),
-        onPressed: () => context.pop(),
+        onPressed: () => AppNavigation.goBack(context),
       ),
-      titleSpacing: 0,
-      title: Container(
-        height: 52,
-        margin: const EdgeInsets.only(right: _AppTheme.spaceM),
-        decoration: BoxDecoration(
-          color: _AppTheme.surface,
-          borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+      // The title now contains the padded, rounded search field
+      title: Padding(
+        padding: const EdgeInsets.only(top: 16.0, bottom: 8.0), // Adds top and bottom padding
         child: TextField(
           controller: searchController,
           focusNode: searchFocusNode,
           autofocus: true,
           style: const TextStyle(color: _AppTheme.textPrimary, fontSize: 16),
           decoration: InputDecoration(
-            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+            filled: true,
+            fillColor: _AppTheme.surface,
             hintText: 'Search articles...',
             hintStyle: const TextStyle(color: _AppTheme.textSecondary),
             prefixIcon: const Icon(Icons.search, color: _AppTheme.textSecondary),
+            // Suffix icon to clear the text field
             suffixIcon: ValueListenableBuilder<TextEditingValue>(
               valueListenable: searchController,
               builder: (context, value, child) {
-                return value.text.isNotEmpty ? IconButton(
-                  icon: const Icon(Icons.close, color: _AppTheme.textSecondary),
-                  onPressed: onClear,
-                ) : const SizedBox.shrink();
+                return value.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close, color: _AppTheme.textSecondary),
+                        onPressed: onClear,
+                      )
+                    : const SizedBox.shrink();
               },
+            ),
+            // This creates the "pure rounded" pill shape
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(28.0), // Adjusted for pure rounded
+              borderSide: BorderSide.none,
             ),
           ),
           onSubmitted: onSubmitted,
@@ -306,135 +248,33 @@ class _ModernSearchAppBar extends StatelessWidget implements PreferredSizeWidget
       ],
     );
   }
-  
+
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  // Increased height to accommodate the vertical padding
+  Size get preferredSize => const Size.fromHeight(80.0); // Adjusted height
 }
 
-class _ModernSectionHeader extends StatelessWidget {
-  final String title;
-
-  const _ModernSectionHeader({required this.title});
+class _InitialSearchPrompt extends StatelessWidget {
+  const _InitialSearchPrompt();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: _AppTheme.spaceM,
-        vertical: _AppTheme.spaceS,
-      ),
-      decoration: BoxDecoration(
-        color: _AppTheme.surface,
-        borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-        border: Border.all(
-          color: _AppTheme.primary.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 20,
-            decoration: BoxDecoration(
-              color: _AppTheme.primary,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: _AppTheme.spaceM),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: _AppTheme.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-
-
-class _ModernTopicsGrid extends StatelessWidget {
-  final List<String> topics;
-  final Function(String) onTopicTap;
-
-  const _ModernTopicsGrid({
-    required this.topics,
-    required this.onTopicTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: _AppTheme.spaceM,
-      runSpacing: _AppTheme.spaceM,
-      children: topics.map((topic) => _ModernTopicChip(
-        label: topic,
-        onTap: () => onTopicTap(topic),
-      )).toList(),
-    );
-  }
-}
-
-class _ModernTopicChip extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const _ModernTopicChip({
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: _AppTheme.surface,
-      borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: _AppTheme.spaceL,
-            vertical: _AppTheme.spaceM,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-            border: Border.all(
-              color: _AppTheme.primary.withValues(alpha: 0.1),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: _AppTheme.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.tag,
-                  size: 16,
-                  color: _AppTheme.primary,
-                ),
-              ),
-              const SizedBox(width: _AppTheme.spaceS),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: _AppTheme.textPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(_AppTheme.spaceL),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_rounded, size: 64, color: _AppTheme.textSecondary),
+            SizedBox(height: _AppTheme.spaceM),
+            Text('Discover Articles',
+                style: TextStyle(
+                    fontSize: 24, fontWeight: FontWeight.bold, color: _AppTheme.textPrimary)),
+            SizedBox(height: _AppTheme.spaceS),
+            Text('Find articles on any topic you are interested in',
+                style: TextStyle(fontSize: 16, color: _AppTheme.textSecondary),
+                textAlign: TextAlign.center),
+          ],
         ),
       ),
     );
@@ -442,11 +282,10 @@ class _ModernTopicChip extends StatelessWidget {
 }
 
 class _FilterSheetContent extends StatelessWidget {
-  final CategoriesCubit categoriesCubit;
   final String? selectedCategory;
   final Function(String?) onCategorySelected;
-  
-  const _FilterSheetContent({required this.categoriesCubit, this.selectedCategory, required this.onCategorySelected});
+
+  const _FilterSheetContent({this.selectedCategory, required this.onCategorySelected});
 
   @override
   Widget build(BuildContext context) {
@@ -460,94 +299,49 @@ class _FilterSheetContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
           Center(
             child: Container(
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: _AppTheme.textSecondary.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
+                  color: _AppTheme.textSecondary.withOpacity(0.3), borderRadius: BorderRadius.circular(2)),
             ),
           ),
           const SizedBox(height: _AppTheme.spaceL),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Filter by Category',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: _AppTheme.textPrimary,
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: _AppTheme.scaffoldBg,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  onPressed: () => context.pop(),
-                  icon: const Icon(Icons.close, color: _AppTheme.textSecondary),
-                ),
-              ),
-            ],
-          ),
+          const Text('Filter by Category',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _AppTheme.textPrimary)),
           const SizedBox(height: _AppTheme.spaceL),
           BlocBuilder<CategoriesCubit, CategoriesState>(
-            bloc: categoriesCubit,
             builder: (context, state) {
               return state.maybeWhen(
-                loaded: (categories) => Column(
-                  children: [
-                    _ModernCategoryTile(
-                      title: 'All Categories',
-                      icon: Icons.apps,
-                      isSelected: selectedCategory == null,
-                      onTap: () => onCategorySelected(null),
-                    ),
-                    const SizedBox(height: _AppTheme.spaceS),
-                    ...categories.map((category) => Padding(
-                      padding: const EdgeInsets.only(bottom: _AppTheme.spaceS),
-                      child: _ModernCategoryTile(
-                        title: category.name,
-                        icon: Icons.category,
-                        isSelected: selectedCategory == category.id.toString(),
-                        onTap: () => onCategorySelected(category.id.toString()),
+                loaded: (categories) => Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      _ModernCategoryTile(
+                        title: 'All Categories',
+                        icon: Icons.apps_rounded,
+                        isSelected: selectedCategory == null,
+                        onTap: () => onCategorySelected(null),
                       ),
-                    )),
-                  ],
+                      const SizedBox(height: _AppTheme.spaceS),
+                      ...categories.map((category) => Padding(
+                            padding: const EdgeInsets.only(bottom: _AppTheme.spaceS),
+                            child: _ModernCategoryTile(
+                              title: category.name,
+                              icon: Icons.category_rounded,
+                              isSelected: selectedCategory == category.id.toString(),
+                              onTap: () => onCategorySelected(category.id.toString()),
+                            ),
+                          )),
+                    ],
+                  ),
                 ),
                 orElse: () => const Center(child: CircularProgressIndicator(color: _AppTheme.primary)),
               );
             },
           ),
-          const SizedBox(height: _AppTheme.spaceL),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => context.pop(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _AppTheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: _AppTheme.spaceL),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Apply Filter',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: MediaQuery.of(context).padding.bottom),
+          SizedBox(height: MediaQuery.of(context).padding.bottom + _AppTheme.spaceM),
         ],
       ),
     );
@@ -560,17 +354,13 @@ class _ModernCategoryTile extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _ModernCategoryTile({
-    required this.title,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
+  const _ModernCategoryTile(
+      {required this.title, required this.icon, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: isSelected ? _AppTheme.primary.withValues(alpha: 0.1) : _AppTheme.scaffoldBg,
+      color: isSelected ? _AppTheme.primary.withOpacity(0.1) : _AppTheme.scaffoldBg,
       borderRadius: BorderRadius.circular(_AppTheme.radiusL),
       child: InkWell(
         onTap: onTap,
@@ -578,43 +368,28 @@ class _ModernCategoryTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(_AppTheme.spaceL),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-            border: Border.all(
-              color: isSelected ? _AppTheme.primary : _AppTheme.primary.withValues(alpha: 0.1),
-              width: isSelected ? 2 : 1,
-            ),
-          ),
+              borderRadius: BorderRadius.circular(_AppTheme.radiusL),
+              border: Border.all(
+                  color: isSelected ? _AppTheme.primary : Colors.transparent, width: 1.5)),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(_AppTheme.spaceS),
                 decoration: BoxDecoration(
-                  color: isSelected ? _AppTheme.primary : _AppTheme.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: isSelected ? Colors.white : _AppTheme.primary,
-                ),
+                    color: isSelected ? _AppTheme.primary : _AppTheme.primary.withOpacity(0.1),
+                    shape: BoxShape.circle),
+                child:
+                    Icon(icon, size: 20, color: isSelected ? Colors.white : _AppTheme.primary),
               ),
               const SizedBox(width: _AppTheme.spaceM),
               Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? _AppTheme.primary : _AppTheme.textPrimary,
-                  ),
-                ),
+                child: Text(title,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected ? _AppTheme.primary : _AppTheme.textPrimary)),
               ),
-              if (isSelected)
-                Icon(
-                  Icons.check_circle,
-                  color: _AppTheme.primary,
-                  size: 20,
-                ),
+              if (isSelected) const Icon(Icons.check_circle_rounded, color: _AppTheme.primary, size: 24),
             ],
           ),
         ),
@@ -636,95 +411,35 @@ class _SearchNoResults extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(_AppTheme.spaceL),
-              decoration: BoxDecoration(
-                color: _AppTheme.surface,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.search_off_rounded,
-                size: 64,
-                color: _AppTheme.textSecondary,
-              ),
-            ),
+            const Icon(Icons.search_off_rounded, size: 64, color: _AppTheme.textSecondary),
             const SizedBox(height: _AppTheme.spaceL),
-            const Text(
-              'No results found',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: _AppTheme.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
+            const Text('No results found',
+                style: TextStyle(
+                    fontSize: 24, fontWeight: FontWeight.bold, color: _AppTheme.textPrimary),
+                textAlign: TextAlign.center),
             const SizedBox(height: _AppTheme.spaceS),
-            Text(
-              'We couldn\'t find any articles for "$query"',
-              style: const TextStyle(
-                fontSize: 16,
-                color: _AppTheme.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: _AppTheme.spaceM),
-            Container(
-              padding: const EdgeInsets.all(_AppTheme.spaceL),
-              decoration: BoxDecoration(
-                color: _AppTheme.primary.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-                border: Border.all(
-                  color: _AppTheme.primary.withValues(alpha: 0.1),
-                ),
-              ),
-              child: const Text(
-                'Try adjusting your search terms or browse popular topics above',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: _AppTheme.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
+            Text('We couldn\'t find any articles for "$query"',
+                style: const TextStyle(fontSize: 16, color: _AppTheme.textSecondary),
+                textAlign: TextAlign.center),
             const SizedBox(height: _AppTheme.spaceL),
-            ElevatedButton(
-              onPressed: onClear,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _AppTheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: _AppTheme.spaceL,
-                  vertical: _AppTheme.spaceL,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Clear Search',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+            ElevatedButton.icon(
+                onPressed: onClear,
+                icon: const Icon(Icons.clear_all_rounded),
+                label: const Text('Clear Search'),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: _AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: _AppTheme.spaceL, vertical: _AppTheme.spaceM),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(_AppTheme.radiusL)),
+                    elevation: 0)),
           ],
         ),
       ),
     );
   }
 }
-
-// --- Reusable Widgets (can be moved to a common file) ---
 
 class _FeedPostCard extends StatelessWidget {
   final PostModel post;
@@ -734,23 +449,12 @@ class _FeedPostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final categoryName = post.getCategoryNames().firstOrNull ?? 'General';
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: _AppTheme.spaceS,
-        vertical: _AppTheme.spaceS,
-      ),
       decoration: BoxDecoration(
         color: _AppTheme.surface,
         borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-        border: Border.all(
-          color: _AppTheme.primary.withValues(alpha: 0.1),
-          width: 1,
-        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 4))
         ],
       ),
       child: Material(
@@ -759,115 +463,43 @@ class _FeedPostCard extends StatelessWidget {
           onTap: () => AppNavigation.goToPost(context, post.id),
           borderRadius: BorderRadius.circular(_AppTheme.radiusL),
           child: Padding(
-            padding: const EdgeInsets.all(_AppTheme.spaceL),
+            padding: const EdgeInsets.all(_AppTheme.spaceM),
             child: Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: _AppTheme.spaceM,
-                          vertical: _AppTheme.spaceS,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _AppTheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(_AppTheme.radiusM),
-                        ),
-                        child: Text(
-                          '$categoryName • ${post.getFormattedDate()}',
-                          style: TextStyle(
-                            color: _AppTheme.primary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: _AppTheme.spaceM),
-                      Text(
-                        post.title.rendered,
-                        style: const TextStyle(
-                          color: _AppTheme.textPrimary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: _AppTheme.spaceM),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: _AppTheme.scaffoldBg,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const CircleAvatar(
-                              radius: 12,
-                              backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=5'),
-                            ),
-                          ),
-                          const SizedBox(width: _AppTheme.spaceM),
-                          Expanded(
-                            child: Text(
-                              post.getAuthorName(),
-                              style: const TextStyle(
-                                color: _AppTheme.textSecondary,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
+                      Text('$categoryName • ${post.getFormattedDate()}',
+                          style: const TextStyle(
+                              color: _AppTheme.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500)),
+                      const SizedBox(height: _AppTheme.spaceS),
+                      Text(post.title.rendered,
+                          style: const TextStyle(
+                              color: _AppTheme.textPrimary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              height: 1.4),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
-                const SizedBox(width: _AppTheme.spaceL),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-                    child: CachedNetworkImage(
+                const SizedBox(width: _AppTheme.spaceM),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(_AppTheme.radiusM),
+                  child: CachedNetworkImage(
                       imageUrl: post.featuredImageUrl ?? 'https://via.placeholder.com/100x100',
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        width: 100,
-                        height: 100,
-                        color: _AppTheme.scaffoldBg,
-                        child: Icon(
-                          Icons.image_rounded,
-                          color: _AppTheme.textSecondary,
-                          size: 32,
-                        ),
-                      ),
+                      placeholder: (context, url) => Container(color: _AppTheme.scaffoldBg),
                       errorWidget: (context, url, error) => Container(
-                        width: 100,
-                        height: 100,
-                        color: _AppTheme.scaffoldBg,
-                        child: const Icon(
-                          Icons.broken_image_rounded,
-                          color: _AppTheme.textSecondary,
-                          size: 32,
-                        ),
-                      ),
-                    ),
-                  ),
+                          color: _AppTheme.scaffoldBg,
+                          child: const Icon(Icons.broken_image_rounded,
+                              color: _AppTheme.textSecondary))),
                 ),
               ],
             ),
@@ -892,8 +524,9 @@ class _FeedSkeleton extends StatelessWidget {
           highlightColor: _AppTheme.shimmerHighlight,
           child: Container(
             margin: const EdgeInsets.only(bottom: _AppTheme.spaceM),
-            padding: const EdgeInsets.all(_AppTheme.spaceS),
-            decoration: BoxDecoration(color: _AppTheme.surface, borderRadius: BorderRadius.circular(_AppTheme.radiusM)),
+            decoration: BoxDecoration(
+                color: _AppTheme.surface, borderRadius: BorderRadius.circular(_AppTheme.radiusL)),
+            padding: const EdgeInsets.all(_AppTheme.spaceM),
             child: Row(
               children: [
                 Expanded(
@@ -909,7 +542,11 @@ class _FeedSkeleton extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: _AppTheme.spaceM),
-                Container(width: 100, height: 100, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(_AppTheme.radiusM))),
+                Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                        color: Colors.white, borderRadius: BorderRadius.circular(_AppTheme.radiusM))),
               ],
             ),
           ),
@@ -932,87 +569,29 @@ class _ModernErrorState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(_AppTheme.radiusXL),
-              decoration: BoxDecoration(
-                color: _AppTheme.surface,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.cloud_off_rounded,
-                size: 64,
-                color: _AppTheme.textSecondary,
-              ),
-            ),
+            const Icon(Icons.cloud_off_rounded, size: 64, color: _AppTheme.textSecondary),
             const SizedBox(height: _AppTheme.spaceL),
-            const Text(
-              'Something went wrong',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: _AppTheme.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
+            const Text('Something went wrong',
+                style: TextStyle(
+                    fontSize: 24, fontWeight: FontWeight.bold, color: _AppTheme.textPrimary),
+                textAlign: TextAlign.center),
             const SizedBox(height: _AppTheme.spaceS),
-            Text(
-              message,
-              style: const TextStyle(
-                fontSize: 16,
-                color: _AppTheme.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: _AppTheme.spaceM),
-            Container(
-              padding: const EdgeInsets.all(_AppTheme.spaceL),
-              decoration: BoxDecoration(
-                color: _AppTheme.primary.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-                border: Border.all(
-                  color: _AppTheme.primary.withValues(alpha: 0.1),
-                ),
-              ),
-              child: const Text(
-                'Please check your connection and try again',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: _AppTheme.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
+            Text(message,
+                style: const TextStyle(fontSize: 16, color: _AppTheme.textSecondary),
+                textAlign: TextAlign.center),
             const SizedBox(height: _AppTheme.spaceL),
-            ElevatedButton(
-              onPressed: onRetry,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _AppTheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: _AppTheme.radiusXL,
-                  vertical: _AppTheme.spaceL,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(_AppTheme.radiusL),
-                ),
-                elevation: 0,
-              ),
-              child: const Text(
-                'Try Again',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+            ElevatedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Try Again'),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: _AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: _AppTheme.spaceL, vertical: _AppTheme.spaceM),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(_AppTheme.radiusL)),
+                    elevation: 0)),
           ],
         ),
       ),

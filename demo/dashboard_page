@@ -1,0 +1,510 @@
+// ignore_for_file: unused_field
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/auth/auth_event.dart';
+import '../bloc/auth/auth_state.dart';
+import '../models/user_profile.dart';
+import '../widgets/footer_nav_bar.dart'; // Keeping your original footer nav bar
+
+// --- Enhanced Modern & Professional UI Constants ---
+class _UIConstants {
+  static const Color primary = Color(0xFF6366F1);      // Indigo
+  static const Color secondary = Color(0xFF06B6D4);     // Cyan
+
+  static const Color error = Color(0xFFEF4444);         // Red
+  
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF64748B);
+
+  
+  static const Color background = Color(0xFFF8FAFC);    // Light slate background
+  static const Color backgroundSecondary = Color(0xFFF1F5F9);
+  static const Color border = Color(0xFFE2E8F0);
+  static const Color surface = Colors.white;
+
+
+  // Enhanced Navigation Card Colors with gradients
+  static final List<List<Color>> navItemGradients = [
+    [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)], // Indigo gradient
+    [const Color(0xFFECFEFF), const Color(0xFFCFFAFE)], // Cyan gradient
+    [const Color(0xFFF3E8FF), const Color(0xFFE9D5FF)], // Purple gradient
+    [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)], // Emerald gradient
+    [const Color(0xFFFEF3C7), const Color(0xFFFDE68A)], // Amber gradient
+    [const Color(0xFFFEE2E2), const Color(0xFFFECACA)], // Red gradient
+    [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)], // Blue gradient
+    [const Color(0xFFF0FDF4), const Color(0xFFDCFCE7)], // Green gradient
+  ];
+
+  // Enhanced icon colors with better contrast
+  static final List<Color> navIconColors = [
+    const Color(0xFF6366F1), // Indigo
+    const Color(0xFF06B6D4), // Cyan
+    const Color(0xFF8B5CF6), // Purple
+    const Color(0xFF10B981), // Emerald
+    const Color(0xFFF59E0B), // Amber
+    const Color(0xFFEF4444), // Red
+    const Color(0xFF3B82F6), // Blue
+    const Color(0xFF22C55E), // Green
+  ];
+
+  // Shadow definitions
+  static const List<BoxShadow> cardShadow = [
+    BoxShadow(
+      color: Color(0x0A000000),
+      blurRadius: 10,
+      offset: Offset(0, 4),
+    ),
+    BoxShadow(
+      color: Color(0x05000000),
+      blurRadius: 3,
+      offset: Offset(0, 1),
+    ),
+  ];
+
+  static const double pagePadding = 20.0;
+  static const double borderRadius = 16.0;
+  static const double cardRadius = 16.0;
+  static const double iconSize = 28.0;
+}
+
+// --- Navigation Models ---
+class NavItem {
+  final String title;
+  final IconData icon;
+  final String route;
+  final bool isComingSoon;
+  final String description;
+
+  const NavItem({
+    required this.title,
+    required this.icon,
+    required this.route,
+    required this.description,
+    this.isComingSoon = false,
+  });
+}
+
+class NavCategory {
+  final String title;
+  final List<NavItem> items;
+  final IconData categoryIcon;
+  final bool initiallyExpanded;
+
+  const NavCategory({
+    required this.title,
+    required this.items,
+    required this.categoryIcon,
+    this.initiallyExpanded = false,
+  });
+}
+
+// --- OPTIMIZED: Page with static const data ---
+class DashboardPage extends StatelessWidget {
+  const DashboardPage({super.key});
+
+  // OPTIMIZATION: The navigation data is static and constant.
+  // Defining it as `static const` ensures it's created once at compile time
+  // and shared across all instances, saving memory and CPU cycles.
+  static const List<NavItem> _navItems = [
+    // Stock & Products
+    NavItem(title: 'Godown Stock', icon: Icons.inventory_2_outlined, route: '/dashboard/stock', description: 'Manage inventory levels'),
+    NavItem(title: 'Purchase', icon: Icons.shopping_cart_outlined, route: '/dashboard/purchase', description: 'Track purchases'),
+    NavItem(title: 'Sale', icon: Icons.trending_up_rounded, route: '/dashboard/sale', description: 'Monitor sales data'),
+    NavItem(title: 'Adjustments', icon: Icons.tune_rounded, route: '/dashboard/adjustments', description: 'Stock adjustments'),
+    
+    // Orders & Payments
+    NavItem(title: 'MR Orders', icon: Icons.shopping_bag_outlined, route: '/dashboard/orders-from-mr', description: 'View MR orders'),
+    NavItem(title: 'MR Payments', icon: Icons.account_balance_wallet_outlined, route: '/dashboard/payment-from-mr', description: 'Track payments'),
+    
+    // MR & Activity
+    NavItem(title: 'MR Control Panel', icon: Icons.dashboard_outlined, route: '/dashboard/mr-control-panel', description: 'Manage MR activities'),
+    
+    // Reporting
+    NavItem(title: 'AI Report', icon: Icons.analytics_outlined, route: '/dashboard/ai-report', description: 'AI-powered insights'),
+    NavItem(title: 'Customer Hub', icon: Icons.account_balance_rounded, route: '/dashboard/customer-management', description: 'Manage customers'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        if (state is AuthAuthenticated) {
+          return Scaffold(
+            backgroundColor: _UIConstants.background,
+            // OPTIMIZATION: Pass only the dynamic data (the user).
+            // The static navigation data will be accessed directly.
+            body: _DashboardContent(user: state.user),
+            bottomNavigationBar: const FooterNavBar(currentRoute: '/dashboard'),
+          );
+        }
+        if (state is AuthError) return _ErrorWidget(message: state.message);
+        if (state is AuthAccessDenied) return _ErrorWidget(message: state.message);
+        return const _LoadingWidget();
+      },
+    );
+  }
+}
+
+// --- OPTIMIZED: Main Content Widget ---
+class _DashboardContent extends StatelessWidget {
+  final UserProfile user;
+  
+  // OPTIMIZATION: The constructor is simpler. It only takes the data that changes.
+  const _DashboardContent({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      bottom: false,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // This part is dynamic because it depends on `user` data.
+            Padding(
+              padding: const EdgeInsets.all(_UIConstants.pagePadding),
+              child: _AdminHeader(user: user),
+            ),
+            const SizedBox(height: 16),
+            // OPTIMIZATION: This entire navigation section is now a `const` widget.
+            // Flutter can cache this entire subtree and skip rebuilding it,
+            // making subsequent builds much faster.
+            const _NavigationGrid(navItems: DashboardPage._navItems),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- Header Widgets (No Changes, cannot be const due to runtime data) ---
+class _AdminHeader extends StatelessWidget {
+  final UserProfile user;
+  const _AdminHeader({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _UserChip(userName: user.name, userRole: "Admin"),
+        Row(
+          children: [
+            _HeaderButton(
+              icon: Icons.notifications_active_rounded,
+              onTap: () => context.go('/dashboard/action-center'),
+              isDestructive: false,
+            ),
+            const SizedBox(width: 8),
+            _HeaderButton(
+              icon: Icons.logout_rounded,
+              onTap: () => context.read<AuthBloc>().add(const AuthEvent.logoutRequested()),
+              isDestructive: true,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+class _UserChip extends StatelessWidget {
+  final String userName;
+  final String userRole;
+  const _UserChip({required this.userName, required this.userRole});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: _UIConstants.surface,
+        borderRadius: BorderRadius.circular(50),
+        border: Border.all(color: _UIConstants.border),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: _UIConstants.primary.withAlpha(26),
+            child: const Icon(Icons.admin_panel_settings_rounded, size: 18, color: _UIConstants.primary),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$userRole: $userName',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: _UIConstants.textPrimary),
+              ),
+              const Text(
+                'Welcome to the dashboard',
+                style: TextStyle(fontSize: 12, color: _UIConstants.textSecondary),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+class _HeaderButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isDestructive;
+  const _HeaderButton({required this.icon, required this.onTap, this.isDestructive = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isDestructive ? Colors.red.shade400 : _UIConstants.textSecondary;
+    return Container(
+      decoration: BoxDecoration(
+        color: _UIConstants.surface,
+        shape: BoxShape.circle,
+        border: Border.all(color: _UIConstants.border),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Icon(icon, color: color, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+// --- OPTIMIZED: Navigation Grid Widget ---
+class _NavigationGrid extends StatelessWidget {
+  final List<NavItem> navItems;
+  // OPTIMIZATION: Added const constructor.
+  const _NavigationGrid({required this.navItems});
+
+  static const double _childAspectRatio = 0.8;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _UIConstants.pagePadding),
+      child: GridView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        // OPTIMIZATION: The grid delegate is now a `const` object,
+        // preventing it from being recreated on every build.
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: _childAspectRatio,
+        ),
+        itemCount: navItems.length,
+        itemBuilder: (context, index) {
+          final item = navItems[index];
+          // Each card gets a unique color from the gradient and icon color arrays
+          return _NavItemCard(
+            item: item,
+            gradientColors: _UIConstants.navItemGradients[index % _UIConstants.navItemGradients.length],
+            iconColor: _UIConstants.navIconColors[index % _UIConstants.navIconColors.length],
+          );
+        },
+      ),
+    );
+  }
+}
+
+// --- Navigation Item Card ---
+class _NavItemCard extends StatelessWidget {
+  final NavItem item;
+  final List<Color> gradientColors;
+  final Color iconColor;
+
+  const _NavItemCard({
+    required this.item,
+    required this.gradientColors,
+    required this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isSoon = item.isComingSoon;
+    final List<Color> effectiveGradient = isSoon 
+        ? [Colors.grey.shade200, Colors.grey.shade300] 
+        : gradientColors;
+    final Color effectiveIconColor = isSoon ? Colors.grey.shade500 : iconColor;
+    final Color effectiveTextColor = isSoon ? Colors.grey.shade600 : _UIConstants.textPrimary;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: effectiveGradient,
+        ),
+        borderRadius: BorderRadius.circular(_UIConstants.cardRadius),
+        boxShadow: _UIConstants.cardShadow,
+        border: Border.all(
+          color: _UIConstants.border.withValues(alpha: 0.1),
+          width: 0.5,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(_UIConstants.cardRadius),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(_UIConstants.cardRadius),
+          onTap: isSoon ? () => _showComingSoonDialog(context) : () => context.go(item.route),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _UIConstants.surface.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: effectiveIconColor.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          item.icon, 
+                          size: _UIConstants.iconSize, 
+                          color: effectiveIconColor,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        item.title,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14, // Decreased font size
+                          fontWeight: FontWeight.bold,
+                          color: effectiveTextColor,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+              ),
+              if (isSoon)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      'SOON',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showComingSoonDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(_UIConstants.cardRadius),
+        ),
+        title: const Row(
+          children: [
+            Icon(
+              Icons.hourglass_top_rounded,
+              color: _UIConstants.primary,
+            ),
+            SizedBox(width: 8),
+            Text('Coming Soon!'),
+          ],
+        ),
+        content: Text(
+          'The "${item.title}" feature is under development and will be available in a future update.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('GOT IT'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- Unchanged Helper Widgets ---
+class _LoadingWidget extends StatelessWidget {
+  const _LoadingWidget();
+  @override
+  Widget build(BuildContext context) => const Scaffold(body: Center(child: CircularProgressIndicator()));
+}
+class _ErrorWidget extends StatelessWidget {
+  final String message;
+  const _ErrorWidget({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('An Error Occurred', style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              SelectableText(message, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              ElevatedButton(onPressed: () => context.read<AuthBloc>().add(const AuthEvent.checkAuthStatus()), child: const Text('Retry')),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

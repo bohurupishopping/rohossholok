@@ -55,13 +55,21 @@ class _AboutScreenState extends State<AboutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _AppTheme.scaffoldBg,
-      body: Stack(
-        children: [
-          _buildBackgroundImage(),
-          _buildContentSheet(),
-        ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          AppNavigation.goBack(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: _AppTheme.scaffoldBg,
+        body: Stack(
+          children: [
+            _buildBackgroundImage(),
+            _buildContentSheet(),
+          ],
+        ),
       ),
     );
   }
@@ -182,7 +190,7 @@ class _AboutScreenState extends State<AboutScreen> {
             margin: Margins.only(top: 24, bottom: 8),
           ),
         },
-        onLinkTap: (url, _, __) => (url != null) ? AppUtils.launchURL(url) : null,
+        onLinkTap: (url, _, _) => (url != null) ? AppUtils.launchURL(url) : null,
       ),
     );
   }

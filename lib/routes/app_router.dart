@@ -18,66 +18,73 @@ class AppRouter {
     initialLocation: AppRoutes.home,
     debugLogDiagnostics: false, // Disabled for production
     routes: [
-      // Home route
-      GoRoute(
-        path: AppRoutes.home,
-        name: 'home',
-        builder: (context, state) => const HomeScreen(),
-      ),
-      
-      // Category routes
-      GoRoute(
-        path: '/category/:categoryId',
-        name: 'category',
-        builder: (context, state) {
-          final categoryId = int.tryParse(state.pathParameters['categoryId'] ?? '') ?? 0;
-          final categoryName = state.uri.queryParameters['name'] ?? '';
-          return CategoryScreen(
-            categoryId: categoryId,
-            categoryName: categoryName,
-          );
-        },
-      ),
-      
-      // All categories route
-      GoRoute(
-        path: '/categories',
-        name: 'categories',
-        builder: (context, state) => const AllCategoriesScreen(),
-      ),
-      
-      // Post detail route
-      GoRoute(
-        path: '/post/:postId',
-        name: 'post',
-        builder: (context, state) {
-          final postId = int.tryParse(state.pathParameters['postId'] ?? '') ?? 0;
-          return PostDetailScreen(postId: postId);
-        },
-      ),
-      
-      // Search route
-      GoRoute(
-        path: '/search',
-        name: 'search',
-        builder: (context, state) {
-          final query = state.uri.queryParameters['q'] ?? '';
-          return SearchScreen(initialQuery: query);
-        },
-      ),
-      
-      // About route
-      GoRoute(
-        path: AppRoutes.about,
-        name: 'about',
-        builder: (context, state) => const AboutScreen(),
-      ),
-      
-      // Contact route
-      GoRoute(
-        path: AppRoutes.contact,
-        name: 'contact',
-        builder: (context, state) => const ContactScreen(),
+      // Shell route to maintain navigation stack
+      ShellRoute(
+        builder: (context, state, child) => child,
+        routes: [
+          // Home route
+          GoRoute(
+            path: AppRoutes.home,
+            name: 'home',
+            builder: (context, state) => const HomeScreen(),
+            routes: [
+              // Category routes as sub-routes of home
+              GoRoute(
+                path: 'category/:categoryId',
+                name: 'category',
+                builder: (context, state) {
+                  final categoryId = int.tryParse(state.pathParameters['categoryId'] ?? '') ?? 0;
+                  final categoryName = state.uri.queryParameters['name'] ?? '';
+                  return CategoryScreen(
+                    categoryId: categoryId,
+                    categoryName: categoryName,
+                  );
+                },
+              ),
+              
+              // All categories route
+              GoRoute(
+                path: 'categories',
+                name: 'categories',
+                builder: (context, state) => const AllCategoriesScreen(),
+              ),
+              
+              // Post detail route
+              GoRoute(
+                path: 'post/:postId',
+                name: 'post',
+                builder: (context, state) {
+                  final postId = int.tryParse(state.pathParameters['postId'] ?? '') ?? 0;
+                  return PostDetailScreen(postId: postId);
+                },
+              ),
+              
+              // Search route
+              GoRoute(
+                path: 'search',
+                name: 'search',
+                builder: (context, state) {
+                  final query = state.uri.queryParameters['q'] ?? '';
+                  return SearchScreen(initialQuery: query);
+                },
+              ),
+              
+              // About route
+              GoRoute(
+                path: 'about',
+                name: 'about',
+                builder: (context, state) => const AboutScreen(),
+              ),
+              
+              // Contact route
+              GoRoute(
+                path: 'contact',
+                name: 'contact',
+                builder: (context, state) => const ContactScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
     
@@ -145,36 +152,36 @@ class AppNavigation {
   
   /// Navigate to category
   static void goToCategory(BuildContext context, int categoryId, String categoryName) {
-    context.go('/category/$categoryId?name=${Uri.encodeComponent(categoryName)}');
+    context.push('/category/$categoryId?name=${Uri.encodeComponent(categoryName)}');
   }
   
   /// Navigate to all categories
   static void goToAllCategories(BuildContext context) {
-    context.go('/categories');
+    context.push('/categories');
   }
   
   /// Navigate to post detail
   static void goToPost(BuildContext context, int postId) {
-    context.go('/post/$postId');
+    context.push('/post/$postId');
   }
   
   /// Navigate to search
   static void goToSearch(BuildContext context, {String? query}) {
     if (query != null && query.isNotEmpty) {
-      context.go('/search?q=${Uri.encodeComponent(query)}');
+      context.push('/search?q=${Uri.encodeComponent(query)}');
     } else {
-      context.go('/search');
+      context.push('/search');
     }
   }
   
   /// Navigate to about
   static void goToAbout(BuildContext context) {
-    context.go(AppRoutes.about);
+    context.push('/about');
   }
   
   /// Navigate to contact
   static void goToContact(BuildContext context) {
-    context.go(AppRoutes.contact);
+    context.push('/contact');
   }
   
   /// Push a route (for modal or overlay navigation)
