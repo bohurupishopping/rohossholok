@@ -44,7 +44,7 @@ class WordPressApiService {
     
     // Check cache first if enabled
     if (useCache) {
-      final cachedPosts = await _cacheService.getCachedPosts(
+      final cachedPosts = await _cacheService.getCachedRelatedPosts(
         cacheKey,
         maxAge: _postsCacheTTL,
       );
@@ -96,7 +96,7 @@ class WordPressApiService {
         
         // Cache the result if using cache
         if (useCache) {
-          await _cacheService.cachePosts(cacheKey, posts);
+          await _cacheService.cacheRelatedPosts(cacheKey, posts);
         }
         
         // Clean up cancel token
@@ -131,6 +131,76 @@ class WordPressApiService {
         return PostModel.fromJson(response.data);
       } else {
         throw Exception('Failed to load post: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    } catch (e) {
+      throw Exception('Unexpected error: $e');
+    }
+  }
+  
+  /// Get related posts from the same category, excluding the current post
+  Future<List<PostModel>> getRelatedPosts({
+    required int currentPostId,
+    required int categoryId,
+    int perPage = 4,
+    bool includeEmbedded = true,
+    bool useCache = true,
+  }) async {
+    // Generate cache key
+    final cacheKey = 'related_posts_${currentPostId}_${categoryId}_$perPage';
+    
+    // Check cache first if enabled
+    if (useCache) {
+      final cachedPosts = await _cacheService.getCachedPosts(
+        cacheKey,
+        maxAge: _postsCacheTTL,
+      );
+      if (cachedPosts != null) {
+        return cachedPosts;
+      }
+    }
+    
+    // Cancel previous request if exists
+    _cancelPreviousRequest(cacheKey);
+    final cancelToken = CancelToken();
+    _cancelTokens[cacheKey] = cancelToken;
+    
+    try {
+      final queryParams = <String, dynamic>{
+        'categories': categoryId,
+        'exclude': currentPostId, // Exclude current post
+        'per_page': perPage,
+        'status': 'publish',
+        'orderby': 'date',
+        'order': 'desc',
+      };
+      
+      if (includeEmbedded) {
+        queryParams['_embed'] = true;
+      }
+      
+      final response = await _dio.get(
+        AppConstants.postsEndpoint,
+        queryParameters: queryParams,
+        cancelToken: cancelToken,
+      );
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        final posts = data.map((json) => PostModel.fromJson(json)).toList();
+        
+        // Cache the result if using cache
+        if (useCache) {
+          await _cacheService.cachePosts(cacheKey, posts);
+        }
+        
+        // Clean up cancel token
+        _cancelTokens.remove(cacheKey);
+        
+        return posts;
+      } else {
+        throw Exception('Failed to load related posts: ${response.statusCode}');
       }
     } on DioException catch (e) {
       throw _handleDioError(e);

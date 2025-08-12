@@ -26,6 +26,7 @@ class _AppTheme {
   static const Color shimmerBase = Color(0xFFF0F2F5);
   static const Color shimmerHighlight = Colors.white;
 
+  static const double spaceS = 8.0;
   static const double spaceM = 16.0;
   static const double spaceL = 24.0;
 
@@ -252,6 +253,8 @@ class _ContentSheet extends StatelessWidget {
               _PostHeader(post: post),
               const SizedBox(height: 24),
               _PostContent(htmlData: post.content.rendered),
+              const SizedBox(height: 32),
+              _RelatedStoriesSection(currentPost: post),
               const SizedBox(height: 48), // Bottom padding
             ],
           ),
@@ -381,6 +384,310 @@ class _PostContent extends StatelessWidget {
       data: htmlData,
       style: _htmlStyles,
       onLinkTap: (url, _, _) => (url != null) ? AppUtils.launchURL(url) : null,
+    );
+  }
+}
+
+// --- Related Stories Section ---
+
+class _RelatedStoriesSection extends StatefulWidget {
+  final PostModel currentPost;
+  
+  const _RelatedStoriesSection({required this.currentPost});
+  
+  @override
+  State<_RelatedStoriesSection> createState() => _RelatedStoriesSectionState();
+}
+
+class _RelatedStoriesSectionState extends State<_RelatedStoriesSection> {
+  late Future<List<PostModel>> _relatedPostsFuture;
+  
+  @override
+  void initState() {
+    super.initState();
+    _fetchRelatedPosts();
+  }
+  
+  void _fetchRelatedPosts() {
+    final apiService = context.read<WordPressApiService>();
+    final categoryIds = widget.currentPost.categories;
+    
+    if (categoryIds.isNotEmpty) {
+      _relatedPostsFuture = apiService.getRelatedPosts(
+        currentPostId: widget.currentPost.id,
+        categoryId: categoryIds.first,
+        perPage: 4,
+      );
+    } else {
+      _relatedPostsFuture = Future.value(<PostModel>[]);
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: _AppTheme.spaceL),
+          child: Text(
+            'Related Stories',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: _AppTheme.textPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(height: _AppTheme.spaceM),
+        FutureBuilder<List<PostModel>>(
+          future: _relatedPostsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const _RelatedStoriesSkeleton();
+            }
+            
+            if (snapshot.hasError) {
+              return const _RelatedStoriesError();
+            }
+            
+            final relatedPosts = snapshot.data ?? [];
+            
+            if (relatedPosts.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            
+            return Column(
+              children: relatedPosts.map((post) => 
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    _AppTheme.spaceL, 0, _AppTheme.spaceL, _AppTheme.spaceM),
+                  child: _RelatedStoryCard(post: post),
+                )
+              ).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// Related story card using the same design as _ModernFeedCard from category_screen.dart
+class _RelatedStoryCard extends StatelessWidget {
+  final PostModel post;
+  
+  const _RelatedStoryCard({required this.post});
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 5),
+          )
+        ],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () => AppNavigation.goToPost(context, post.id),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(_AppTheme.spaceM),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${post.getFormattedDate()} • ${post.getEstimatedReadingTime()} min read',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: _AppTheme.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: _AppTheme.spaceS),
+                      Text(
+                        post.title.rendered,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: _AppTheme.textPrimary,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: _AppTheme.spaceS),
+                      if (post.excerpt.rendered.isNotEmpty)
+                        Text(
+                          post.excerpt.rendered.replaceAll(RegExp(r"<[^>]*>"), ''),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: _AppTheme.textSecondary,
+                            height: 1.4,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      const SizedBox(height: _AppTheme.spaceM),
+                      _buildTags(post),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: _AppTheme.spaceM),
+                _buildImage(post.featuredImageUrl),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildTags(PostModel post) {
+    final tags = post.getCategoryNames().take(2).toList();
+    if (tags.isEmpty) return const SizedBox.shrink();
+
+    return Wrap(
+      spacing: _AppTheme.spaceS,
+      runSpacing: _AppTheme.spaceS,
+      children: tags
+          .map((tag) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFCE4EC),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  tag,
+                  style: const TextStyle(
+                    color: Color(0xFFC2185B),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ))
+          .toList(),
+    );
+  }
+  
+  Widget _buildImage(String? imageUrl) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: imageUrl != null
+          ? CachedNetworkImage(
+              imageUrl: imageUrl,
+              width: 90,
+              height: 110,
+              fit: BoxFit.cover,
+              placeholder: (context, url) =>
+                  const SizedBox(width: 90, height: 110, child: ColoredBox(color: Color(0xFFF6F8FD))),
+              errorWidget: (context, url, error) => const SizedBox(
+                width: 90,
+                height: 110,
+                child: ColoredBox(
+                  color: Color(0xFFF6F8FD),
+                  child: Icon(Icons.broken_image,
+                      color: Color(0xFF757575), size: 24),
+                ),
+              ),
+            )
+          : const SizedBox(width: 90, height: 110, child: ColoredBox(color: Color(0xFFF6F8FD))),
+    );
+  }
+}
+
+/// Loading skeleton for related stories
+class _RelatedStoriesSkeleton extends StatelessWidget {
+  const _RelatedStoriesSkeleton();
+  
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: _AppTheme.shimmerBase,
+      highlightColor: _AppTheme.shimmerHighlight,
+      child: Column(
+        children: List.generate(2, (index) => 
+          Container(
+            margin: const EdgeInsets.fromLTRB(
+              _AppTheme.spaceL, 0, _AppTheme.spaceL, _AppTheme.spaceM),
+            padding: const EdgeInsets.all(_AppTheme.spaceM),
+            decoration: BoxDecoration(
+              color: _AppTheme.surface,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(height: 10, width: 120, color: Colors.white),
+                      const SizedBox(height: 12),
+                      Container(height: 18, color: Colors.white),
+                      const SizedBox(height: 8),
+                      Container(height: 18, width: 100, color: Colors.white),
+                      const SizedBox(height: 12),
+                      Container(height: 14, color: Colors.white),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: _AppTheme.spaceM),
+                Container(
+                  width: 90,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Error widget for related stories
+class _RelatedStoriesError extends StatelessWidget {
+  const _RelatedStoriesError();
+  
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: _AppTheme.spaceL),
+      padding: const EdgeInsets.all(_AppTheme.spaceM),
+      decoration: BoxDecoration(
+        color: _AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.red.withOpacity(0.2)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red, size: 20),
+          SizedBox(width: _AppTheme.spaceS),
+          Text(
+            'Failed to load related stories',
+            style: TextStyle(
+              color: _AppTheme.textSecondary,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
